@@ -17,7 +17,7 @@ import django_heroku
 #
 
 # Set environment
-ENVIRONMENT = environ.get('ENVIRONMENT', 'dev')
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'dev')
 assert ENVIRONMENT
 _prod, _staging, _dev = ENVIRONMENT == 'production', ENVIRONMENT == 'staging', ENVIRONMENT == 'dev'
 assert _prod or _staging or _dev
@@ -26,7 +26,7 @@ assert _prod or _staging or _dev
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Django-specific key used for cryptographic signing
-os.environ.get('SECRET_KEY', '4r7(kZ>d?2ABp($`x8LZTvFRk4hl3F')
+SECRET_KEY = os.environ.get('SECRET_KEY', '4r7(kZ>d?2ABp($`x8LZTvFRk4hl3F')
 
 # Django-specific debug mode
 if _prod:
@@ -70,7 +70,7 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             # TODO: review this
-            path.join(BASE_DIR, 'project', 'templates'),
+            os.path.join(BASE_DIR, 'project', 'templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {

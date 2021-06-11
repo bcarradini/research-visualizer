@@ -3,5 +3,10 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[packages]
+django="~=2.2.14" # pinned for feature stability
+django-heroku="~=0.3.1"
+gunicorn="~=19.9"
+
 [requires]
 python_version = "3.7"
