@@ -2,8 +2,10 @@
 Visualize research topics across [Scopus subject area classifications](https://service.elsevier.com/app/answers/detail/a_id/14882/supporthub/scopus/~/what-are-the-most-frequent-subject-area-categories-and-classifications-used-in/).
 
 ## **Dependencies**
-- Python 3.7
+- PostgreSQL 12.4, or compatible
+- Python 3.7.10
 - pip3
+- heroku cli (optional)
 
 ## **Setup**
 
@@ -11,6 +13,12 @@ Visualize research topics across [Scopus subject area classifications](https://s
 Clone the repository onto your local machine
 ```
 git clone https://github.com/bcarradini/research-visualizer.git
+```
+
+### **Create PSQL Database**
+Run PSQL command to create a local database
+```
+$ createdb resviz
 ```
 
 ### **Create Virtual Environment**
@@ -23,3 +31,18 @@ $ pipenv --three
 # Activate virtual environment
 $ pipenv shell
 ```
+
+
+## **Run**
+This project was originally setup to deploy on Heroku. To run locally via Heroku CLI:
+```
+$ heroku local [-p 5000]
+```
+
+You can also run locally without using the Heroku CLI:
+```
+gunicorn project.wsgi [-b 0.0.0.0:5000]
+```
+
+
+
