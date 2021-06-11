@@ -9,8 +9,13 @@ https://docs.djangoproject.com/en/2.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
+
+# Standard
 import os
+
+# 3rd party
 import django_heroku
+import dj_database_url
 
 #
 # -- Environment
@@ -94,15 +99,20 @@ WSGI_APPLICATION = 'project.wsgi.application'
 #
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE' : 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'resviz',
-        'USER': os.getlogin(), # default to login name for the machine,
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+if _prod or _staging:
+    DATABASES = dict() # stub out
+    DATABASES['default'] = dj_database_url.parse(environ.get('DATABASE_URL'))
+    DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE' : 'django.contrib.gis.db.backends.postgis',
+            'NAME': 'resviz',
+            'USER': os.getlogin(), # default to login name for the machine,
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
+        }
     }
-}
 
 #
 # -- Security
