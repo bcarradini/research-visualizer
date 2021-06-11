@@ -101,7 +101,7 @@ WSGI_APPLICATION = 'project.wsgi.application'
 
 if _prod or _staging:
     DATABASES = dict() # stub out
-    DATABASES['default'] = dj_database_url.parse(environ.get('DATABASE_URL'))
+    DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
     DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 else:
     DATABASES = {
