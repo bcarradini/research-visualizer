@@ -25,23 +25,25 @@ $ createdb resviz
 Navigate to the root of the local repository and create Python virtual environment
 ```
 # Update pipenv by pulling directly for its master branch, which includes important bugfixes
-$ pip3 install git+https://github.com/pypa/pipenv.git@master# Create python 3 virtual environment (venv) and launch shell
+$ pip3 install git+https://github.com/pypa/pipenv.git@master
 # Create Python 3 virtual environment
 $ pipenv --three
 # Activate virtual environment
 $ pipenv shell
+# Install dependencies
+# pipenv install
 ```
-
 
 ## **Run**
 This project was originally setup to deploy on Heroku. To run locally via Heroku CLI:
 ```
-$ heroku local [-p 5000]
+$ heroku local -p 5000
 ```
 
 You can also run locally without using the Heroku CLI:
 ```
-gunicorn project.wsgi [-b 0.0.0.0:5000]
+```
+gunicorn project.wsgi -b 0.0.0.0:5000
 ```
 
 

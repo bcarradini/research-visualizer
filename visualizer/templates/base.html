@@ -21,7 +21,6 @@
     <!-- TODO: load minified for non-dev ENVIRONMENT -->
     <script defer src="https://unpkg.com/vue@2.6.11/dist/vue.js"></script>    
     <script defer src="https://unpkg.com/vue-resource@1.5.0/dist/vue-resource.js"></script>
-
 </head>
 
 <!-- TODO: decorate body with ENVIRONMENT -->
@@ -39,7 +38,8 @@
 
     <!-- Global JS Variables -->
     <script>
-        var debug = true // TODO: {% if DEBUG or ENVIRONMENT == 'dev' %}true{% else %}false{% endif %}
+        var debug = {% if DEBUG or ENVIRONMENT == "dev" %}true{% else %}false{% endif %}
+        var baseUrl = "{{ BASE_URL }}"
     </script>
 
     <!-- Page-Specific JS -->

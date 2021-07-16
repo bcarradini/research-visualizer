@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 # Standard
 import os
+import sys
 
 # 3rd party
 import django_heroku
@@ -26,6 +27,14 @@ ENVIRONMENT = os.environ.get('ENVIRONMENT', 'dev')
 assert ENVIRONMENT
 _prod, _staging, _dev = ENVIRONMENT == 'production', ENVIRONMENT == 'staging', ENVIRONMENT == 'dev'
 assert _prod or _staging or _dev
+
+# Set base URL for environment
+if _prod:
+    BASE_URL = 'TODO'
+elif _staging:
+    BASE_URL = 'TODO'
+else:
+    BASE_URL = 'http://localhost:5000'
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -86,13 +95,26 @@ TEMPLATES = [
                 # 'django.template.context_processors.static', TODO: Do we want this?
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'project.context_processors.settings', TODO: Do we want to implement this?
+                'project.context_processors.project_settings',
             ]
         },
     }
 ]
 
 WSGI_APPLICATION = 'project.wsgi.application'
+
+# Local settings
+try: 
+    from .local_settings import *
+    sys.stderr.write('local_settings imported\n')
+except ImportError as e:
+    sys.stderr.write('local_settings import failed {}\n'.format(e))
+
+# Scopus
+SCOPUS_API_KEY = os.environ.get('SCOPUS_API_KEY')
+
+# Settings keys to make available to template context
+CONTEXT_SETTINGS = ('DEBUG', 'ENVIRONMENT', 'BASE_URL')
 
 #
 # -- Database
