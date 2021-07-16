@@ -35,16 +35,8 @@ $ pipenv shell
 ```
 
 ## **Run**
-This project was originally setup to deploy on Heroku. To run locally via Heroku CLI:
+To run locally:
 ```
-$ heroku local -p 5000
+gunicorn project.wsgi -b localhost:5000
 ```
-
-You can also run locally without using the Heroku CLI:
-```
-```
-gunicorn project.wsgi -b 0.0.0.0:5000
-```
-
-
-
+IMPORTANT: The Scopus API key is set up to allow requests from localhost:5000

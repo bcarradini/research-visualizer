@@ -4,14 +4,12 @@
 <!-- TODO -->
 {% block content %}
 <section v-cloak id="vue-el-index">
-    <a @click="moreText = 'I hope you\'re having a good day.'">Hey Stephen, click me!</a>
-    <div v-if="moreText">${ moreText }</div>
-<section>
+    <input v-model=query type="text"></input>
+    <a @click="search">Search</a>
+</section>
+{% endblock %}
 
 <!-- Page-Specific JS -->
 {% block bottomjs %}
 <script defer type="module" src="{% static 'index.js' %}"></script>
 {% endblock %}
-
-{% endblock %}
-
