@@ -1,4 +1,7 @@
 
+// Internal
+import {internalGet, internalPost} from './api.js'
+
 const app = new Vue({
     delimiters: ['${', '}'],
     el: '#vue-el-index',
@@ -6,18 +9,34 @@ const app = new Vue({
     data: function() {
         return {
             // URLs
-            classificationsUrl: baseUrl+'/subject-area-classifications',
-            // TODO: Comment
+            baseUrl,
+            // Queries
             query: null,
             lastQuery: null,
+            results: {},
+            loadingResults: false,
             // Scopus data
             categories: [],
             classifications: [],
         }
     },
 
+    //
+    // -- Lifecycle hooks
+    //
+
     created: function () {
         this.fetchSubjectAreaClassifications()
+    },
+
+    // 
+    // -- Computed properties
+    // 
+
+    computed: {
+        loadingPage() {
+            return this.categories.length == 0
+        }
     },
 
     //
@@ -26,26 +45,34 @@ const app = new Vue({
 
     methods: {
         async fetchSubjectAreaClassifications() {
-            let url = this.classificationsUrl
-            let response = await Vue.http.get(url) // vue-resource http service
-            .then(response => {
-                if (!response.ok) throw response
-                if (debug) console.log('fetchSubjectAreaClassifications(): SUCCESS:', url, response)
-                this.categories = response.body.categories
-                this.classifications = response.body.classifications
-            })
-            .catch(error => {
-                console.error('fetchSubjectAreaClassifications(): ERROR:', url, error)
-                return null
-            })
+            let url = this.baseUrl+'/subject-area-classifications'
+            let response = await internalGet(url)
+            console.log('TEMP: fetchSubjectAreaClassifications(): response =', response)
+            if (response) {
+                this.categories = response.categories
+                this.classifications = response.classifications                
+            }
         },
+
+        async fetchSearchResults(query, categories=[]) {
+            this.loadingResults = true
+            let url = this.baseUrl+'/search'
+            let data = {query: query, categories: categories.length ? categories : this.categories}
+            let response = await internalPost(url, data)
+            if (response) {
+                this.results = response.results
+            }
+            this.loadingResults = false
+        },
+
         search () {
             let query = (this.query || '').trim()
             if (query && query != this.lastQuery) {
-                console.log('search!')
+                // TEMP
+                let categories = this.categories.slice(0, 2)
+                // TEMP
+                this.fetchSearchResults(query, categories)
                 this.lastQuery = query
-            } else {
-                console.log('no new query :-(')
             }
         }
     },
