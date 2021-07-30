@@ -25,13 +25,11 @@ import dj_database_url
 # Set environment
 ENVIRONMENT = os.environ.get('ENVIRONMENT', 'dev')
 assert ENVIRONMENT
-_prod, _staging, _dev = ENVIRONMENT == 'production', ENVIRONMENT == 'staging', ENVIRONMENT == 'dev'
-assert _prod or _staging or _dev
+_prod, _dev = ENVIRONMENT == 'production', ENVIRONMENT == 'dev'
+assert _prod or _dev
 
 # Set base URL for environment
 if _prod:
-    BASE_URL = 'https://research-visualizer.herokuapp.com/'
-elif _staging:
     BASE_URL = 'https://research-visualizer.herokuapp.com/'
 else:
     BASE_URL = 'http://localhost:5000'
@@ -44,12 +42,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY', '4r7(kZ>d?2ABp($`x8LZTvFRk4hl3F')
 
 # Django-specific debug mode
 if _prod:
-    DEBUG = False
+    DEBUG = os.environ.get('DEBUG') == '1'
 else:
     DEBUG = True
 
 # TODO
-ALLOWED_HOSTS = []
+if _prod:
+    ALLOWED_HOSTS = ['research-visualizer.herokuapp.com']
+else:    
+    ALLOWED_HOSTS = ['localhost', '.ngrok.io']
 
 #
 # -- Application
@@ -121,7 +122,7 @@ CONTEXT_SETTINGS = ('DEBUG', 'ENVIRONMENT', 'BASE_URL')
 #
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-if _prod or _staging:
+if _prod:
     DATABASES = dict() # stub out
     DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
     DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'

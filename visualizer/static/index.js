@@ -44,7 +44,6 @@ const app = new Vue({
     methods: {
         async fetchSubjectAreaClassifications() {
             let response = await internalGet('/subject-area-classifications')
-            console.log('TEMP: fetchSubjectAreaClassifications(): response =', response)
             if (response) {
                 this.categories = response.categories
                 this.classifications = response.classifications                
