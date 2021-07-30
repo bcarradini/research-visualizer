@@ -8,8 +8,6 @@ const app = new Vue({
 
     data: function() {
         return {
-            // URLs
-            baseUrl,
             // Queries
             query: null,
             lastQuery: null,
@@ -45,8 +43,7 @@ const app = new Vue({
 
     methods: {
         async fetchSubjectAreaClassifications() {
-            let url = this.baseUrl+'/subject-area-classifications'
-            let response = await internalGet(url)
+            let response = await internalGet('/subject-area-classifications')
             console.log('TEMP: fetchSubjectAreaClassifications(): response =', response)
             if (response) {
                 this.categories = response.categories
@@ -56,9 +53,8 @@ const app = new Vue({
 
         async fetchSearchResults(query, categories=[]) {
             this.loadingResults = true
-            let url = this.baseUrl+'/search'
             let data = {query: query, categories: categories.length ? categories : this.categories}
-            let response = await internalPost(url, data)
+            let response = await internalPost('/search', data)
             if (response) {
                 this.results = response.results
             }

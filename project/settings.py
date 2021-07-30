@@ -30,9 +30,9 @@ assert _prod or _staging or _dev
 
 # Set base URL for environment
 if _prod:
-    BASE_URL = 'TODO'
+    BASE_URL = 'https://research-visualizer.herokuapp.com/'
 elif _staging:
-    BASE_URL = 'TODO'
+    BASE_URL = 'https://research-visualizer.herokuapp.com/'
 else:
     BASE_URL = 'http://localhost:5000'
 
