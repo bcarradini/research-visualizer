@@ -9,6 +9,9 @@ Visualize research topics across [Scopus subject area classifications](https://s
 
 ## **Setup**
 
+### **Get Scopus API Key and Insttoken**
+- TODO
+
 ### **Clone Repository**
 Clone the repository onto your local machine
 ```

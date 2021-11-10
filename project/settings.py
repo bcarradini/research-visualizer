@@ -113,6 +113,7 @@ except ImportError as e:
 
 # Scopus
 SCOPUS_API_KEY = os.environ.get('SCOPUS_API_KEY')
+SCOPUS_INST_TOKEN = os.environ.get('SCOPUS_INST_TOKEN')
 
 # Settings keys to make available to template context
 CONTEXT_SETTINGS = ('DEBUG', 'ENVIRONMENT', 'BASE_URL')

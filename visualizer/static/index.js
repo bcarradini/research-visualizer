@@ -62,13 +62,15 @@ const app = new Vue({
 
         search () {
             let query = (this.query || '').trim()
-            if (query && query != this.lastQuery) {
+            // TODO: put this back eventually
+            // if (query && query != this.lastQuery) {
                 // TEMP
-                let categories = this.categories.slice(0, 2)
+                // let categories = this.categories
+                let categories = ['AGRI', 'ARTS', 'MULT']
                 // TEMP
                 this.fetchSearchResults(query, categories)
                 this.lastQuery = query
-            }
+            // }
         }
     },
 })
