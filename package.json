@@ -1,0 +1,23 @@
+{
+  "name": "research-visualizer",
+  "description": "Visualize research topics across [Scopus subject area classifications](https://service.elsevier.com/app/answers/detail/a_id/14882/supporthub/scopus/~/what-are-the-most-frequent-subject-area-categories-and-classifications-used-in/).",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bcarradini/research-visualizer.git"
+  },
+  "author": "Barbara Carradini",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bcarradini/research-visualizer/issues"
+  },
+  "homepage": "https://github.com/bcarradini/research-visualizer#readme",
+  "devDependencies": {},
+  "dependencies": {
+    "v-network-graph": "^0.3.8"
+  }
+}

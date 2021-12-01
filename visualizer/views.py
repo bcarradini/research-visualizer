@@ -13,7 +13,7 @@ import requests
 
 # Constants
 ELSEVIER_BASE_URL = 'http://api.elsevier.com'
-ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN}
+ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
 ELSEVIER_LIMIT = 20 # TODO: review this
 
 #
@@ -21,9 +21,10 @@ ELSEVIER_LIMIT = 20 # TODO: review this
 #
 
 
-def abstract(request):
-    body = json.loads(request.body)
-    results = _get_abstract(body['abstract_url'])
+def abstract(request, scopus_id):
+    print(f"TEMP: abstract(): request.__dict__ = {request.__dict__}")
+    print(f"TEMP: abstract(): scopus_id = {scopus_id}")
+    results = _get_abstract(scopus_id)
     return JsonResponse({'results': results}, status=200)
 
 
@@ -46,18 +47,20 @@ def index(request):
 # -- Private functions
 #
 
-def _get_abstract(abstract_url):
+def _get_abstract(scopus_id):
     """TODO: Comment"""
-    print(f"TEMP: _get_abstract(): abstract_url = {abstract_url}")
+    # Request Scopus abstract
+    url = f'{ELSEVIER_BASE_URL}/content/abstract/scopus_id/{scopus_id}'
+    print(f"TEMP: _get_abstract(): scopus_id = {scopus_id}, url = {url}")
     response = requests.get(url, headers=ELSEVIER_HEADERS)
+    print(f"TEMP: _get_abstract(): response.json() = {response.json()}")
 
-    # Convert XML to dictionary
-    response_dict = xmltodict.parse(response.content, dict_constructor=dict)
-
+    # Unpack abstract text
     try:
-        abstract = response_dict['abstracts-retrieval-response']['coredata']['dc:description']['abstract']['ce:para']
-    except KeyError:
-        print("TODO: KeyError")
+        abstract = response.json()['abstracts-retrieval-response']['coredata']['dc:description']['abstract']['ce:para']
+    except Exception as exc:
+        print(f"ERROR: {exc}, {entry}")
+        raise exc
 
     return abstract
 
@@ -87,14 +90,14 @@ def _get_search_results_for_category(query, category):
         try:
             return {
                 # TODO: guard against exceptions
-                'title': entry['dc:title'],
+                'title': entry['dc:title'], # TOOD: sometimes this key is missing
                 'first_author': entry['dc:creator'], # TOOD: sometimes this key is missing
                 'publication_name': entry['prism:publicationName'],
-                'abstract_url': [link for link in entry['link'] if link['@ref'] == 'self'][0]['@href'],
+                'scopus_id': entry['dc:identifier'].replace('SCOPUS_ID:','')
+                # 'abstract_url': [link for link in entry['link'] if link['@ref'] == 'self'][0]['@href'],
             }
         except Exception as exc:
             print(f"ERROR: {exc}, {entry}")
-            raise exc
 
     # TODO: comment
     while True:

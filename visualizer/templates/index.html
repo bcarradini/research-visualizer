@@ -11,25 +11,37 @@
         </template>
         <template v-else>
             <input v-model=query type="text" :disabled="loadingResults"></input>
-            <a @click="search" :disabled="loadingResults">Search</a>
+            <a @click.prevent="search" class="btn" :class="{ disabled: loadingResults }">Search</a>
         </template>
+    </div>
+
+    <div id="visualization">
+    </div>
+
+    <!-- Errors -->
+    <div v-if="errors.length > 0">
+        <div v-for="error in errors">
+            <div>${ error }</div>
+        </div>
     </div>
 
     <!-- Results -->
     <div>
-        <template v-if="loadingResults">
+        <div v-if="loadingResults">
             Searching...
-        </template>
-        <template v-else>
-            <div v-for="(categoryObj, category, index) in results" :key="category">
-                <div>${ category }</div>
-                <div>Number of entries: ${ categoryObj.num_entries } </div>
-                <ul>
-                    <!-- add for-loop key -->
-                    <li v-for="entry in categoryObj.entries"><em>${ entry.title }</em> by ${ entry.first_author } in ${ entry.publication_name}</li>
-                </ul>            
-            </div>
-        </template>
+        </div>
+        <div v-if="!isEmpty(results)" v-for="(categoryObj, category, index) in results" :key="category">
+            <div>${ category }</div>
+            <div>Number of entries: ${ categoryObj.num_entries } </div>
+            <ul>
+                <!-- add for-loop key -->
+                <li v-for="entry in categoryObj.entries">
+                    <a @click.prevent="fetchAbstract(entry.scopus_id)">
+                        <em>${ entry.title }</em> by ${ entry.first_author } in ${ entry.publication_name}
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
 </section>
 {% endblock %}
@@ -39,5 +51,5 @@
 <script>
     const DEBUG = {% if DEBUG %}true{% else %}false{% endif %}
 </script>
-<script defer type="module" src="{% static 'index.js' %}"></script>
+<script defer type="module" src="{% static 'js/index.js' %}"></script>
 {% endblock %}

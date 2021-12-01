@@ -6,6 +6,7 @@ Visualize research topics across [Scopus subject area classifications](https://s
 - Python 3.7.10
 - pip3
 - heroku cli (optional)
+- TODO: npm, v-network-graph
 
 ## **Setup**
 
@@ -40,6 +41,6 @@ $ pipenv shell
 ## **Run**
 To run locally:
 ```
-gunicorn project.wsgi -b localhost:5000
+gunicorn project.wsgi -b localhost:5000 --reload
 ```
-IMPORTANT: The Scopus API key is set up to allow requests from localhost:5000
+IMPORTANT: The Scopus API key must be set up to allow requests from localhost:5000

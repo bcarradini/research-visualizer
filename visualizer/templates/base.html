@@ -1,29 +1,38 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 
 <head>
     <title>Research Visualizer</title>
 
-    <style>
-    [v-cloak] { display: none; }
-    </style>
+    <!-- CUSTOM STYLES -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}" />
 
     <!-- JQUERY -->
     <!-- TODO: load minified for non-dev ENVIRONMENT -->
     <script dever src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.js"></script>
 
     <!-- BOOTSTRAP -->
-    <!-- TODO: should I keep this? -->
-    <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" />
-    <script defertype="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" />
+    <script defertype="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
     <!-- VUEJS -->
     <!-- TODO: load minified for non-dev ENVIRONMENT -->
     <script defer src="https://unpkg.com/vue@2.6.11/dist/vue.js"></script>    
     <script defer src="https://unpkg.com/vue-resource@1.5.0/dist/vue-resource.js"></script>
 
+    <!-- LODASH -->
+    <script defer src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>    
+
     <!-- COOKIES -->
     <script defer src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.0/dist/js.cookie.min.js"></script>
+
+    <!-- D3 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+    const div = d3.selectAll("div");
+    </script>
 </head>
 
 <!-- TODO: decorate body with ENVIRONMENT -->

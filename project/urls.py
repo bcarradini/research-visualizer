@@ -4,11 +4,12 @@ from django.contrib import admin
 
 admin.autodiscover()
 
-from visualizer.views import index, search, subject_area_classifications
+from visualizer.views import abstract, index, search, subject_area_classifications
 
 
 # Learn more here: https://docs.djangoproject.com/en/2.1/topics/http/urls/
 urlpatterns = [
+    path('abstract/<int:scopus_id>', abstract, name='abstract'),
     path('search', search, name='search'),
     path('subject-area-classifications', subject_area_classifications, name='subject-area-classifications'),
     path('', index, name='index'),
