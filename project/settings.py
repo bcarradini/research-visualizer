@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'visualizer',
+    'compressor',
+    'compressor_toolkit',
 ]
 
 MIDDLEWARE = [
@@ -172,5 +174,39 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+   os.path.join(BASE_DIR, 'visualizer', 'static')
+]
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+]
+
+#
+# -- Compression
+#
+# https://django-compressor.readthedocs.io/en/latest/settings/
+
+COMPRESS_ENABLED = COMPRESS_OFFLINE = False # _prod or _staging
+COMPRESS_FILTERS = {
+    'css': ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.rCSSMinFilter'],
+    'js': ['compressor.filters.jsmin.JSMinFilter']
+}
+COMPRESS_PRECOMPILERS = (
+    ('module', 'compressor_toolkit.precompilers.ES6Compiler'),
+    ('text/x-scss', 'compressor_toolkit.precompilers.SCSSCompiler'),
+)
+COMPRESS_CACHEABLE_PRECOMPILERS = (
+    'module'
+)
+# COMPRESS_CSS_HASHING_METHOD = 'content' ???
+# COMPRESS_STORAGE = 'compressor.storage.GzipCompressorFileStorage' ???
+if COMPRESS_ENABLED:
+    sys.stderr.write('offline compression enabled; you must perform compression manually\n')
+
+#
+# TODO: comment
+#
 
 django_heroku.settings(locals())

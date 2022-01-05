@@ -131,5 +131,6 @@ dmypy.json
 # node
 node_modules/
 
-# My own stuff
+# research visualizer
+staticfiles/
 scratch.py

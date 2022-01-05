@@ -1,44 +1,35 @@
 
 // 3rd party
-import VNetworkGraph from "v-network-graph"
-// import "v-network-graph/lib/style.css"
-import VNetworkGraph from "../../../node_modules/v-network-graph"
-// import "../../../node_modules/v-network-graph/lib/style.css"
+import { createApp } from 'vue'
+import VNetworkGraph from 'v-network-graph'
 
 // Internal
-import {internalGet, internalPost} from './api.js'
+import {internalGet, internalPost} from './api'
+import NetworkGraph from './partials/network_graph'
 
-const app = new Vue({
+const app = createApp({
     delimiters: ['${', '}'],
-    el: '#vue-el-index',
+    components: {
+        'network-graph': NetworkGraph,
+    },
+
+    //
+    // -- Initial state
+    //
 
     data: function() {
         return {
             categories: [],
             classifications: [],
             errors: [],
+            hubNode: null,
             lastSearch: {
                 query: null,
             },
             loadingResults: false,
             query: null,
             results: {},
-
-            // TODO
-            tempData: {
-                tempNodes: [
-                    {"id": "Search Query"},
-                    {"id": "AGRI"},
-                    {"id": "ARTS"},
-                    {"id": "MULT"},
-                ],
-                tempLinks: [
-                    {"source": "Search Query", "target": "AGRI"},
-                    {"source": "Search Query", "target": "ARTS"},
-                    {"source": "Search Query", "target": "MULT"},
-                ],
-            },
-            // TODO
+            // TEMP
 
             // map external resources to instance data
             isEmpty: _.isEmpty,
@@ -51,13 +42,14 @@ const app = new Vue({
 
     created: function() {
         this.fetchSubjectAreaClassifications()
-        // TODO: prototype
-        // d3.select("#visualization").style("background-color", "red");
-        // d3.selectAll("#visualization .circle")
-        //         .style("height", function(d, i) {
-        //             console.log('TEMP: i =', i)
-        //             return 10*(i+1) + "px"
-        //         })
+        // TEMP
+        // this.hubNode = { name: 'query' }
+        // this.results = {
+        //     AGRI: {num_entries: 10},
+        //     ARTS: {num_entries: 20},
+        //     BIOC: {num_entries: 30},
+        // }
+        // TEMP
     },
 
     // 
@@ -67,6 +59,13 @@ const app = new Vue({
     computed: {
         loadingPage() { 
             return this.categories.length == 0
+        },
+        spokeNodes() {
+            let nodes = []
+            for (const [category, categoryObj] of Object.entries(this.results)) {
+                nodes.push({ name: `${categoryObj.num_entries}`, nodeId: category})
+            }
+            return nodes
         },
     },
 
@@ -83,6 +82,15 @@ const app = new Vue({
             return results
         },
 
+        search() {
+            let query = (this.query || '').trim()
+            // TODO: put this back eventually
+            // if (query && query != this.lastSearch.query) {
+                this.fetchSearchResults(query, ['AGRI','ARTS','BIOC'])
+                // this.fetchSearchResults(query, this.categories)
+            // }
+        },
+
         async fetchSubjectAreaClassifications() {
             let response = await internalGet('/subject-area-classifications')
             if (response) {
@@ -97,13 +105,16 @@ const app = new Vue({
             this.errors = []
             this.results = {}
             this.loadingResults = true
+            this.hubNode = { name: 'query' }
             // TODO: comment
             for (let category of categories) {
                 console.log('TEMP: fetchSearchResults(): category =', category)
                 let data = {query: query, categories: [category]}
                 let response = await internalPost('/search', data) // TODO: re-factor: create multiple promises and wait for all to resolve
                 if (response) {
+                    console.log('TEMP: fetchSearchResults(): response.results =', response.results)
                     this.results = {...this.results, ...response.results}
+                    console.log('TEMP: fetchSearchResults(): this.results =', this.results)
                 } else {
                     this.errors.push(`Failed to retrieve search results for category ${category}`)
                 }
@@ -112,15 +123,6 @@ const app = new Vue({
             // TODO: comment
             this.lastSearch.query = (this.errors.length == 0) ? query : null
             this.loadingResults = false
-        },
-
-        search() {
-            let query = (this.query || '').trim()
-            // TODO: put this back eventually
-            // if (query && query != this.lastSearch.query) {
-                this.fetchSearchResults(query, ['AGRI','ARTS','BIOC'])
-                // this.fetchSearchResults(query, this.categories)
-            // }
         },
 
         async fetchAbstract(scopusId) {
@@ -136,3 +138,4 @@ const app = new Vue({
 })
 
 app.use(VNetworkGraph)
+app.mount('#vue-el-index')

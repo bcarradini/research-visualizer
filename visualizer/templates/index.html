@@ -1,55 +1,69 @@
 {% extends "base.html" %}
 {% load static %}
 
-<!-- TODO -->
+<!-- TODO: comment -->
+{% block header %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/v_network_graph_style.css' %}" />
+{% endblock %}
+
+<!-- TODO: comment -->
 {% block content %}
 <section v-cloak id="vue-el-index">
-    <!-- Search bar -->
-    <div>
-        <template v-if="loadingPage">
-            Loading...
-        </template>
-        <template v-else>
+    <div v-if="loadingPage">
+        Loading...
+    </div>
+    <div v-else>
+
+        <!-- Search bar -->
+        <div>
             <input v-model=query type="text" :disabled="loadingResults"></input>
             <a @click.prevent="search" class="btn" :class="{ disabled: loadingResults }">Search</a>
-        </template>
-    </div>
-
-    <div id="visualization">
-    </div>
-
-    <!-- Errors -->
-    <div v-if="errors.length > 0">
-        <div v-for="error in errors">
-            <div>${ error }</div>
         </div>
-    </div>
 
-    <!-- Results -->
-    <div>
-        <div v-if="loadingResults">
-            Searching...
+        <section id="visualization">
+            <!-- TODO: Figure out why reactivity isn't working so we can populate the graph as we go instead of waiting
+              -- for loadingResults to be false -->
+            <network-graph v-if="!isEmpty(results) && !loadingResults" :hub-node="hubNode" :spoke-nodes="spokeNodes"></network-graph>
+        </section>
+
+        <!-- Errors -->
+        <div v-if="errors.length > 0">
+            <div v-for="error in errors">
+                <div>${ error }</div>
+            </div>
         </div>
-        <div v-if="!isEmpty(results)" v-for="(categoryObj, category, index) in results" :key="category">
-            <div>${ category }</div>
-            <div>Number of entries: ${ categoryObj.num_entries } </div>
-            <ul>
-                <!-- add for-loop key -->
-                <li v-for="entry in categoryObj.entries">
-                    <a @click.prevent="fetchAbstract(entry.scopus_id)">
-                        <em>${ entry.title }</em> by ${ entry.first_author } in ${ entry.publication_name}
-                    </a>
-                </li>
-            </ul>
+
+        <!-- Results -->
+        <div>
+            <div v-if="loadingResults">
+                Searching...
+            </div>
+            <div v-if="!isEmpty(results)" v-for="(categoryObj, category, index) in results" :key="category">
+                <div>${ category }</div>
+                <div>Number of entries: ${ categoryObj.num_entries } </div>
+                <ul>
+                    <!-- add for-loop key -->
+                    <li v-for="entry in categoryObj.entries">
+                        <a @click.prevent="fetchAbstract(entry.scopus_id)">
+                            <em>${ entry.title }</em> by ${ entry.first_author } in ${ entry.publication_name}
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
+
     </div>
 </section>
 {% endblock %}
 
-<!-- Page-Specific JS -->
-{% block bottomjs %}
+<!-- Page-Specific JS, uncompressed -->
+{% block bottomjs_uncompressed %}
 <script>
     const DEBUG = {% if DEBUG %}true{% else %}false{% endif %}
 </script>
+{% endblock %}
+
+<!-- Page-Specific JS, compressed -->
+{% block bottomjs_compressed %}
 <script defer type="module" src="{% static 'js/index.js' %}"></script>
 {% endblock %}

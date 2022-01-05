@@ -20,19 +20,10 @@
   },
   "homepage": "https://github.com/bcarradini/research-visualizer#readme",
   "dependencies": {
-    "autoprefixer": "^7.2.6",
-    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
-    "babel-plugin-root-import": "^6.5.0",
-    "babel-plugin-transform-html-import-to-string": "0.0.1",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
-    "babelify": "^7.3.0",
-    "browserify": "^14.5.0",
-    "node-sass": "^7.0.0",
-    "postcss-cli": "^9.0.2",
-    "v-network-graph": "^0.3.8",
-    "vue": "^3.2.23",
-    "vue-resource": "^1.5.3"
+    "babelify": "^10.0.0",
+    "browserify": "^17.0.0",
+    "v-network-graph": "^0.3.8"
   }
 }

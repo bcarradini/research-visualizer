@@ -1,7 +1,7 @@
 /* TODO: comment */
 
 /* TODO: comment */
-[v-cloak] { display: none; }
+[v-cloak] { visibility: hidden; }
 
 /* TODO: comment */
 .circle {

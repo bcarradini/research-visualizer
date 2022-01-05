@@ -29,6 +29,7 @@ def abstract(request, scopus_id):
 
 
 def search(request):
+    print(f"TEMP: request.body = {request.body}")
     body = json.loads(request.body)
     results = _get_search_results(body['query'], body['categories'])
     return JsonResponse({'results': results}, status=200)

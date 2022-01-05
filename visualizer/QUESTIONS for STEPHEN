@@ -1,0 +1,11 @@
+QUESTIONS for STEPHEN
+
+Some search results have no title, e.g.:
+    https://www.scopus.com/record/display.uri?eid=2-s2.0-85115829542&origin=inward&txGid=3d5afd69126c4ceacbebb421a6683a6c
+    - Document Type: Erratum
+
+Some search results have no author, e.g.:
+    https://www.scopus.com/record/display.uri?eid=2-s2.0-85109621279&origin=inward&txGid=6e81853f615f35d1d767b435293427e4
+    - Document Type: Note
+
+What to do with Document Type?
