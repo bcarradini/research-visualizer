@@ -20,10 +20,15 @@
             <a @click.prevent="search" class="btn" :class="{ disabled: loadingResults }">Search</a>
         </div>
 
-        <section id="visualization">
-            <!-- TODO: Figure out why reactivity isn't working so we can populate the graph as we go instead of waiting
-              -- for loadingResults to be false -->
-            <network-graph v-if="!isEmpty(results) && !loadingResults" :hub-node="hubNode" :spoke-nodes="spokeNodes"></network-graph>
+        <!-- Category search results -->
+        <section v-if="searchCategory">
+            <a href="#" @click="searchCategory = null">${ lastSearch.query }</a> > ${ searchCategory }
+        </section>
+
+        <!-- Top-level search results -->
+        <section v-else id="visualization">
+            <!-- TODO: Figure out why reactivity isn't working so we don't have to relay on loadingNewResult -->
+            <network-graph v-if="!loadingResults && !isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="eventHandlers"></network-graph>
         </section>
 
         <!-- Errors -->

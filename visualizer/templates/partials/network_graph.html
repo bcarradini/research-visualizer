@@ -1,5 +1,5 @@
 <section>
-    <v-network-graph :nodes="nodes" :edges="edges" :layouts="layouts" :configs="configs">
+    <v-network-graph :nodes="nodes" :edges="edges" :layouts="layouts" :configs="configs" :event-handlers="eventHandlers">
     <template
       #override-node-label="{ nodeId, scale, text, x, y, config, textAnchor, dominantBaseline }"
     >

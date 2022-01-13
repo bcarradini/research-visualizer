@@ -131,13 +131,31 @@ def _get_search_results_for_category(query, category):
 
 def _get_subject_area_categories_and_classifications():
     """TODO: Comment"""
+    categories, classifications = [], {}
+
     # Request Scopus subject area classifications
     url = f"{ELSEVIER_BASE_URL}/content/subject/scopus"
     response = requests.get(url, headers=ELSEVIER_HEADERS)
     response.raise_for_status()
 
     # Unpack successful response
-    classifications = response.json()['subject-classifications']['subject-classification']
-    categories = sorted(list(set(map(lambda c: c['abbrev'], classifications))))
+    subject_classifications = response.json()['subject-classifications']['subject-classification']
+    for sc in subject_classifications:
+        # sc will be formatted like:
+        # {
+        #     "abbrev":"AGRI",    // The "category" in our vernacular
+        #     "code":"1101",      // The "classification" in our vernacular
+        #     "description":"Agricultural and Biological Sciences",
+        #     "detail":"Agricultural and Biological Sciences (miscellaneous)"
+        # }
+        category = sc['abbrev']
+        if category in categories:
+            classifications[category].append(sc)
+        else:
+            categories.append(category)
+            classifications[category] = [sc]
+
+    # Sore categories alphabetically
+    categories = sorted(classifications)
 
     return (categories, classifications)

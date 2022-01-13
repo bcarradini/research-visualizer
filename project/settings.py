@@ -108,6 +108,7 @@ WSGI_APPLICATION = 'project.wsgi.application'
 
 # Local settings
 try: 
+    # TODO: rename 'local_settings' as 'local_env'?
     from .local_settings import *
     sys.stderr.write('local_settings imported\n')
 except ImportError as e:
@@ -200,8 +201,6 @@ COMPRESS_PRECOMPILERS = (
 COMPRESS_CACHEABLE_PRECOMPILERS = (
     'module'
 )
-# COMPRESS_CSS_HASHING_METHOD = 'content' ???
-# COMPRESS_STORAGE = 'compressor.storage.GzipCompressorFileStorage' ???
 if COMPRESS_ENABLED:
     sys.stderr.write('offline compression enabled; you must perform compression manually\n')
 
@@ -210,3 +209,10 @@ if COMPRESS_ENABLED:
 #
 
 django_heroku.settings(locals())
+
+#
+# Summarize
+#
+sys.stderr.write('in summary:\n')
+sys.stderr.write(f'    ENVIRONMENT={ENVIRONMENT}\n')
+sys.stderr.write(f'    DEBUG={DEBUG}\n')

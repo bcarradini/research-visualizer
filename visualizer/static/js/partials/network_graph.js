@@ -11,8 +11,8 @@ const NetworkGraph = {
     template: htmlTemplate,
     components: {},
     props: [
-        'hubNode',
         'spokeNodes',
+        'eventHandlers',
     ],
 
     // 
@@ -29,13 +29,22 @@ const NetworkGraph = {
                 node: {
                     draggable: false,
                     normal: {
-                        radius: 30,
+                        radius: node => node.size,
+                        color: node => node.color,
                     },
                     label: {
                         fontSize: 16,
+                        text: 'name'
                     },
                 },
-            }
+            },
+            hubNode: {
+                name: 'query',
+                size: 24,
+                color: 'black',
+                nodeId: '',
+            },
+            radius: 450,
         }
     },
 
@@ -52,53 +61,64 @@ const NetworkGraph = {
     //
 
     computed: {
+        hubNodeId() {
+            return this.hubNode.nodeId
+        },
+        spokeNodesCnt() {
+            return (this.spokeNodes && this.spokeNodes.length) || 0
+        },
+        spokeRadians() {
+            return (this.spokeNodesCnt && (2*Math.PI/this.spokeNodesCnt)) || 0
+        },
         nodes() {
-            let nodes = {}
-            console.log('TEMP: NetworkGraph.nodes(): this.hubNode =', this.hubNode)
-            console.log('TEMP: NetworkGraph.nodes(): this.spokeNodes =', this.spokeNodes)
-            // TODO: comment
-            if (this.hubNode) {
-                nodes['hub'] = this.hubNode
-                if (this.spokeNodes && this.spokeNodes.length) {
-                    for (let i = 0; i < this.spokeNodes.length; i++) {
-                        let nodeId = this.spokeNodes[i]['nodeId']
-                        nodes[nodeId] = this.spokeNodes[i]
-                    }
-                }
+            // Initialize nodes object with hub node
+            let nodes = {
+                [`${this.hubNodeId}`]: this.hubNode
             }
-            console.log('TEMP: NetworkGraph.nodes(): nodes =', nodes)
+            // Add spoke notes
+            for (let i = 0; i < this.spokeNodesCnt; i++) {
+                let nodeId = this.spokeNodes[i].nodeId
+                nodes[nodeId] = this.spokeNodes[i]
+            }
             return nodes
         },
         edges() {
             let edges = {}
-            // TODO: comment
-            if (this.hubNode && this.spokeNodes && this.spokeNodes.length) {
-                for (let i = 0; i < this.spokeNodes.length; i++) {
-                    let nodeId = this.spokeNodes[i]['nodeId']
-                    edges[`edge${nodeId}`] = {
-                        source: 'hub',
-                        target: nodeId
-                    }
+            // Add edges beteween hub node and each spoke node
+            for (let i = 0; i < this.spokeNodesCnt; i++) {
+                let nodeId = this.spokeNodes[i].nodeId
+                edges[`edge${nodeId}`] = {
+                    source: this.hubNodeId,
+                    target: nodeId
                 }
             }
             return edges
         },
         layouts() {
-            let layout = {}
-            // TODO: comment
-            if (this.hubNode && this.spokeNodes && this.spokeNodes.length) {
-                layout['nodes'] = {
-                    'hub': { x: 0, y: 0 }
+            // Initialize layout object with hub node at center
+            let layout = {'nodes': {
+                [`${this.hubNodeId}`]: {x: 0, y: 0}
+            }}
+            // Add spoke nodes
+            let radians = 0
+            for (let i = 0; i < this.spokeNodesCnt; i++) {
+                let nodeId = this.spokeNodes[i].nodeId
+                layout['nodes'][nodeId] = {
+                    x: this.radius * Math.cos(radians),
+                    y: this.radius * Math.sin(radians),
                 }
-                for (let i = 0; i < this.spokeNodes.length; i++) {
-                    let nodeId = this.spokeNodes[i]['nodeId']
-                    layout['nodes'][nodeId] = { x: 50*i, y: -100 }
-                }
+                radians += this.spokeRadians
             }
             return layout
         },
     },
 
+    // 
+    // -- Methods
+    // 
+
+    methods: {
+    },
 }
 
 export default NetworkGraph
