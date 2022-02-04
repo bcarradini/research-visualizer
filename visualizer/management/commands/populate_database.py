@@ -56,7 +56,11 @@ class Command(BaseCommand):
         # TODO: comment
         if self.execute:
             for c in classifications:
-                ScopusClassification.objects.update_or_create(code=c['code'], defaults={'name': c['detail']})
+                ScopusClassification.objects.update_or_create(code=c['code'], defaults={
+                    'name': c['detail'],
+                    'category_abbr': c['abbrev'],
+                    'category_name': c['description'],
+                })
 
         # TODO: comment
         with open(CSV_FILEPATH, 'r') as csv_file:

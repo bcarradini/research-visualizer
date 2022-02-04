@@ -13,9 +13,13 @@ from django_extensions.db.models import TimeStampedModel
 #
 
 class ScopusClassification(TimeStampedModel):
-    # E.g. 1602, "Analytical Chemistry"
+    # Classification; e.g. 1602, "Analytical Chemistry"
     code = models.CharField(max_length=8)
     name = models.CharField(max_length=64)
+
+    # Category abbreivation; e.g. "CHEM", "Chemistry"
+    category_abbr = models.CharField(max_length=4)
+    category_name = models.CharField(max_length=64)
 
 
 class ScopusSource(TimeStampedModel):
