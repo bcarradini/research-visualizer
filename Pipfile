@@ -9,8 +9,10 @@ django-heroku = "~=0.3.1"         # pinned for feature stability
 dj-database-url = "~=0.5"         # pinned for feature stability
 gunicorn = "~=19.9"               # pinned for feature stability
 requests = "~=2.25.1"             # pinned for feature stability
+psycopg2 = "~=2.8.6"              # pinned for feature stability
 django-compressor = "*"
 django-compressor-toolkit = "*"
+django-extensions = "*"
 
 [requires]
 python_version = "3.7"
