@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 
 # Internal
 from visualizer.models import ScopusClassification, ScopusSource
-from visualizer.scopus_api import get_subject_area_categories_and_classifications
+from visualizer.scopus_api import get_subject_area_classifications
 
 # Constants
 CSV_FILEPATH = './visualizer/static/data/scopus_sources.csv'
@@ -50,7 +50,7 @@ class Command(BaseCommand):
         #
 
         # TODO: comment
-        _, classifications = get_subject_area_categories_and_classifications()
+        _, classifications = get_subject_area_classifications()
         print(f"{self.preamble} update or create {len(classifications)} classifications")
 
         # TODO: comment
