@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+bpython = "*"
 django = "~=2.2.14"               # pinned for feature stability
 django-compressor = "*"
 django-compressor-toolkit = "*"
@@ -14,6 +15,7 @@ gunicorn = "~=19.9"               # pinned for feature stability
 psycopg2 = "~=2.8.6"              # pinned for feature stability
 requests = "~=2.25.1"             # pinned for feature stability
 rq = "*"                          # pinned for feature stability
+rq-dashboard = "*"
 
 [requires]
 python_version = "3.7"

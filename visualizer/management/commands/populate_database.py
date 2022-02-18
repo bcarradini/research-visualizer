@@ -16,6 +16,8 @@ from visualizer.scopus_api import get_subject_area_classifications
 CSV_FILEPATH = './visualizer/static/data/scopus_sources.csv'
 SOURCE_ID_COLUMN_NAME = 'Sourcerecord ID' # journal identifier within scopus
 SOURCE_NAME_COLUMN_NAME = 'Source Title (Medline-sourced journals are indicated in Green)' # journal name
+P_ISSN_COLUMN_NAME = 'Print-ISSN'
+E_ISSN_COLUMN_NAME = 'E-ISSN'
 CLASSIFICATION_COLUMN_NAME = 'All Science Journal Classification Codes (ASJC)' # list of comma-separated classification codes
 
 class Command(BaseCommand):
@@ -74,6 +76,8 @@ class Command(BaseCommand):
         # Determine which columns hold the data we're interested in
         source_id_col_idx = header_row.index(SOURCE_ID_COLUMN_NAME)
         source_name_col_idx = header_row.index(SOURCE_NAME_COLUMN_NAME)
+        p_issn_col_idx = header_row.index(P_ISSN_COLUMN_NAME)
+        e_issn_col_idx = header_row.index(E_ISSN_COLUMN_NAME)
         classification_col_idx = header_row.index(CLASSIFICATION_COLUMN_NAME)
 
         # Count the sources
@@ -82,23 +86,30 @@ class Command(BaseCommand):
 
         # Process each source
         for idx, row in enumerate(source_rows):
-            source_id = row[source_id_col_idx]
-            source_name = row[source_name_col_idx]
-            classification_codes = row[classification_col_idx]
+            source_id = row[source_id_col_idx] or None
+            source_name = row[source_name_col_idx] or None
+            p_issn = row[p_issn_col_idx] or None
+            e_issn = row[e_issn_col_idx] or None
+            classification_codes = row[classification_col_idx] or ''
 
             # Create (or update) source object
             if self.execute:
-                source, _ = ScopusSource.objects.update_or_create(source_id=source_id, defaults={'source_name': source_name})
+                source, _ = ScopusSource.objects.update_or_create(source_id=source_id, defaults={
+                    'source_name': source_name,
+                    'p_issn': p_issn,
+                    'e_issn': e_issn,
+                })
 
             # Add classifications to sources
             codes = [code.strip() for code in re.split(',|;', classification_codes) if code.strip()]
-            for code in codes:
-                try:
-                    source.classifications.add(ScopusClassification.objects.get(code=code))
-                except Exception as exc:
-                    print(f"ERROR: ")
-                    print(f"ERROR: exc = {exc} ({source_id}, {source_name}, {code})")
-                    print(f"ERROR: ")
+            if self.execute:
+                for code in codes:
+                    try:
+                        source.classifications.add(ScopusClassification.objects.get(code=code))
+                    except Exception as exc:
+                        print(f"ERROR: ")
+                        print(f"ERROR: exc = {exc} ({source_id}, {source_name}, {code})")
+                        print(f"ERROR: ")
 
             # Log progress
             if idx % 100 == 0:

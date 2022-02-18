@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
     'visualizer',
     'compressor',
     'compressor_toolkit',
@@ -140,6 +141,14 @@ else:
             'PORT': '5432',
         }
     }
+
+#
+# -- REDIS
+#
+if _prod:
+    REDISTOGO_URL = os.environ.get('REDISTOGO_URL')
+else:
+    REDISTOGO_URL = os.environ.get('REDISTOGO_URL', 'redis://localhost:6379')
 
 #
 # -- Security
