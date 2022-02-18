@@ -14,7 +14,7 @@ from visualizer.models import ScopusClassification, ScopusSource, Search, Search
 # Constants
 ELSEVIER_BASE_URL = 'http://api.elsevier.com'
 ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
-ELSEVIER_LIMIT = 100 # TODO: review this
+ELSEVIER_LIMIT = 100
 STALE_RESULTS_HRS = 1 # TODO: set to 24 after testing
 
 # Scopus Document Types (search results -> entry -> `subtype`)
@@ -58,9 +58,29 @@ def get_abstract(scopus_id):
 
 
 def get_search_results(query, categories, search_id=None):
-    """TODO: Comment
+    """Get search results for query within the specified subject categories.
 
+    !!!
     IMPORTANT: This task is long-running and is designed to be queued for an asynchronous worker.
+    !!!
+
+    Example return:
+    {
+        "CHEM": {                           // category abbreviation
+            "1600": {                           // number of query hits for sources with specific classification
+                "name": "Chemistry (all)",
+                "count": 5,
+            },
+            "unknown": {                        // number of query hits for sources with unknown classification
+                "name": "Unknown",                 
+                "count": 3,
+            },
+            "total": {                          // number of query hits within category
+                "name": "Total",                 
+                "count": 8,
+            },
+        },
+    }
 
     Arguments:
     query -- a string; the search query
@@ -74,12 +94,9 @@ def get_search_results(query, categories, search_id=None):
     searches_cutoff = timezone.now()-timezone.timedelta(hours=STALE_RESULTS_HRS)
     searches = Search.objects.exclude(id=search_id).filter(created__lt=searches_cutoff)
     for search in searches:
-        # Delete search object
-        search.delete()
+        search.delete() # this will cascade to the related objects
 
-    # If fresh search results exist for the specified query and categories, return them immediately
-    # TODO: confirm scopus search is case-insensitive; it should be
-    # searches = Search.objects.filter(query__iexact=query)
+    # TODO: If fresh search results exist for the specified query and categories, return them immediately
 
     # Create Search object to link results back to
     if search_id:
@@ -90,7 +107,8 @@ def get_search_results(query, categories, search_id=None):
     # TODO: Comment
     for category in categories:
         results[category] = _get_category_search_results(search, query, category)
-        search.context['finished_categories'].append()
+        search.context['finished_categories'].append(category)
+        search.save()
 
     return results
 
@@ -156,7 +174,7 @@ def _get_category_search_results(search, query, category):
     entries = SearchResult_Entry.objects.filter(search=search, category_abbr=category)
 
     # Get entry count for category as a whole
-    counts['total']: {
+    counts['total'] = {
         'name': 'Total',
         'count': entries.count(),
     }
@@ -169,7 +187,7 @@ def _get_category_search_results(search, query, category):
         }
 
     # Get entry count for unknown classification
-    counts['unknown']: {
+    counts['unknown'] = {
         'name': 'Unknown',
         'count': entries.filter(scopus_source__isnull=True).count(),
     }
