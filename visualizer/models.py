@@ -69,12 +69,12 @@ class SearchResult_Category(TimeStampedModel):
 
     # Count of search result entries across classifications within category, e.g.:
     #   {
-    #     '1600': 100,   // 100 entries for classification 1600, "Chemistry (all)"
-    #     '1601': 200,   // 200 entries for classification 1601, "Chemistry (miscellaneous)"
+    #     '1600': {"name": "Chemistry (all)", count: 100},             // 100 entries for classification 1600
+    #     '1601': {"name": "Chemistry (miscellaneous)", count: 200},   // 200 entries for classification 1601
     #     ...
-    #     '1607': 300,   // 300 entries for classification 1607, "Spectroscopy"
-    #     'total': 1500, // 1500 entries for category, "Chem"
-    #     'unknown': 10, // 10 entries with unknown classification
+    #     '1607': {"name": "Spectroscopy", count: 300},                // 300 entries for classification 1607
+    #     'unknown': {"name": "Unknown", count: 100},                  // 100 entries with unknown classification
+    #     'total': {"name": "Total", count: 1510},                     // 1500 entries for entire category
     #   }
     counts = jsonb.JSONField(default=dict)
 

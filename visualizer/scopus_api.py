@@ -110,6 +110,9 @@ def get_search_results(query, categories, search_id=None):
         search.context['finished_categories'].append(category)
         search.save()
 
+    search.finished = True
+    saerch.save()
+
     return results
 
 
