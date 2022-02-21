@@ -104,8 +104,12 @@ def get_search_results(query, categories, search_id=None):
     else:
         search = Search.objects.create(query=query, context={'categories': categories, 'finished_categories': []})
 
-    # TODO: Comment
-    for category in categories:
+    # Assemble list of search categories that are not already finished for the search; this allows
+    # us to pick up a search where it left off if it was interrupted.
+    search_categories = [category for category in categories if category not in finished_categories]
+
+    # TODO: comment
+    for category in search_categories:
         results[category] = _get_category_search_results(search, query, category)
         search.context['finished_categories'].append(category)
         search.save()
@@ -265,8 +269,8 @@ def _category_issn_search(search, query, category, p_issn=None, e_issn=None):
         for entry in entries:
             try:
                 # Get source ID and name from entry
-                assert (p_issn == entry.get('prism:issn')) or (e_issn == entry.get('prism:eIssn')), \
-                    f"ISSN mismatch, {p_issn} -> {entry.get('prism:issn')}, {e_issn} -> {entry.get('prism:eIssn')}"
+                assert (entry.get('prism:issn') in issns) or (entry.get('prism:eIssn') in issns), \
+                    f"ISSN mismatch, {entry.get('prism:issn')}, {entry.get('prism:eIssn')}, {issns}"
 
                 # Create search results record for entry
                 SearchResult_Entry.objects.create(
