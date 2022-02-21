@@ -76,7 +76,7 @@ class Search(TimeStampedModel):
             self.context['finished_categories'] = []
 
         # Invoke save() method from superclass
-        return super(Demographics, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     #
     # -- Custom methods
