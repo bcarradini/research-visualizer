@@ -51,6 +51,6 @@ def _search(query, categories):
     query -- a string; the search query
     categories -- a list of strings; scopus category abbreviations (e.g. ['MULT','AGRI','CHEM'])
     """
-    search = Search.objects.create(query=query, context={'categories': categories, 'finished_categories': []})
+    search = Search._init_search(query, categories)
     job = queue_job(get_search_results, args=(query, categories, search.id), job_timeout=12*60*60)
     return (job.id, search.id)

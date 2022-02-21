@@ -102,11 +102,11 @@ def get_search_results(query, categories, search_id=None):
     if search_id:
         search = Search.objects.get(id=search_id)
     else:
-        search = Search.objects.create(query=query, context={'categories': categories, 'finished_categories': []})
+        search = Search._init_search(query, categories)
 
     # Assemble list of search categories that are not already finished for the search; this allows
     # us to pick up a search where it left off if it was interrupted.
-    search_categories = [category for category in categories if category not in finished_categories]
+    search_categories = [c for c in categories if c not in search.context['finished_categories']]
 
     # TODO: comment
     for category in search_categories:

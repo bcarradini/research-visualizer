@@ -7,6 +7,7 @@ To populate these data models, use the management command `populate_database.py`
 # 3rd party
 from django.db import models
 from django.contrib.postgres.fields import jsonb
+from django.core.exceptions import ValidationError
 from django_extensions.db.models import TimeStampedModel
 
 
@@ -58,6 +59,36 @@ class Search(TimeStampedModel):
 
     # Queued job used to execute search
     finished = models.BooleanField(default=False)
+
+    #
+    # -- Superclass methods
+    #
+
+    def save(self, *args, **kwargs):
+        # Raise exception is categories is missing from context
+        categories = self.context.get('categories')
+        if categories is None or type(categories) is not list:
+            raise ValidationError(f"context['categories'] must be a list")
+
+        # Initialize `finished_categories` in context if it is missing
+        finished_categories = self.context.get('finished_categories')
+        if finished_categories is None or type(finished_categories) is not list:
+            self.context['finished_categories'] = []
+
+        # Invoke save() method from superclass
+        return super(Demographics, self).save(*args, **kwargs)
+
+    #
+    # -- Custom methods
+    #
+
+    @classmethod
+    def _init_search(cls, query, categories):
+        return cls.objects.create(query=query, context=Search._init_context(categories))
+
+    @staticmethod
+    def _init_context(categories):
+        return {'categories': categories, 'finished_categories': []}
 
 
 class SearchResult_Category(TimeStampedModel):
