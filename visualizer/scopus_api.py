@@ -15,7 +15,7 @@ from visualizer.models import ScopusClassification, ScopusSource, Search, Search
 ELSEVIER_BASE_URL = 'http://api.elsevier.com'
 ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
 ELSEVIER_LIMIT = 100
-STALE_RESULTS_HRS = 1 # TODO: set to 24 after testing
+STALE_RESULTS_HRS = 24
 
 # Scopus Document Types (search results -> entry -> `subtype`)
 # ar - Article
@@ -90,11 +90,13 @@ def get_search_results(query, categories, search_id=None):
     """
     results = {}
 
-    # Delete stale search results
-    searches_cutoff = timezone.now()-timezone.timedelta(hours=STALE_RESULTS_HRS)
-    searches = Search.objects.exclude(id=search_id).filter(created__lt=searches_cutoff)
-    for search in searches:
-        search.delete() # this will cascade to the related objects
+    # TODO: Decide whether we want to do auto-cleanup; maybe there should be a script to delete
+    # records and vacuum the tables?
+    # # Delete stale search results
+    # searches_cutoff = timezone.now()-timezone.timedelta(hours=STALE_RESULTS_HRS)
+    # searches = Search.objects.exclude(id=search_id).filter(created__lt=searches_cutoff)
+    # for search in searches:
+    #     search.delete() # this will cascade to the related objects
 
     # TODO: If fresh search results exist for the specified query and categories, return them immediately
 
