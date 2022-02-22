@@ -15,6 +15,8 @@ from visualizer.models import ScopusClassification, ScopusSource, Search, Search
 ELSEVIER_BASE_URL = 'http://api.elsevier.com'
 ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
 ELSEVIER_LIMIT = 100
+RETRY_LIMIT = 5
+RETRY_PAUSE = 30
 STALE_RESULTS_HRS = 24
 AUTHOR_MAX_LENGTH = SearchResult_Entry._meta.get_field('first_author').max_length
 DOCTYPE_MAX_LENGTH = SearchResult_Entry._meta.get_field('document_type').max_length
@@ -236,8 +238,9 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
     e_issn -- TODO
     """
     assert p_issn or e_issn, f"ISSN missing"
-    start, count = 0, ELSEVIER_LIMIT
     issns = list(filter(lambda issn: bool(issn), [p_issn, e_issn]))
+    start, count = 0, ELSEVIER_LIMIT
+    retries = 0
 
     # Assemble query URL without pagination markers
     # TODO: add doctype limitation to query
@@ -256,8 +259,14 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
         response = requests.get(url, headers=ELSEVIER_HEADERS)
         try:
             response.raise_for_status()
+            retries = 0
         except Exception as exc:
             print(f"_category_issn_search(): ERROR: {exc}, {url}, {response.json()}")
+            if retries < 5:
+                print(f"_category_issn_search(): INFO: will retry in {RETRY_PAUSE} seconds")
+                sleep(RETRY_PAUSE)
+                retries += 1
+                continue
             raise exc
 
         # Unpack successful response and serialize data
@@ -288,11 +297,11 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
 
                 # Clean DOI
                 doi = entry.get('prism:doi') or None
-                doi = doi if len(doi) <= DOI_MAX_LENGTH else None
+                doi = doi if doi and len(doi) <= DOI_MAX_LENGTH else None
 
                 # Clean document type (subtype)
-                subtype = entry['subtype'] or ''
-                subtype = subtype if len(subtype) == DOCTYPE_MAX_LENGTH else None
+                subtype = entry['subtype'] or None
+                subtype = subtype if subtype and len(subtype) == DOCTYPE_MAX_LENGTH else None
 
                 # Sanity check subtype
                 if subtype in EXCLUDE_DOCTYPES:
