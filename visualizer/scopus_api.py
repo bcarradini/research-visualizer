@@ -16,6 +16,9 @@ ELSEVIER_BASE_URL = 'http://api.elsevier.com'
 ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
 ELSEVIER_LIMIT = 100
 STALE_RESULTS_HRS = 24
+AUTHOR_MAX_LENGTH = SearchResult_Entry._meta.get_field('first_author').max_length
+DOCTYPE_MAX_LENGTH = SearchResult_Entry._meta.get_field('document_type').max_length
+DOI_MAX_LENGTH = SearchResult_Entry._meta.get_field('doi').max_length
 
 # Scopus Document Types (search results -> entry -> `subtype`)
 # ar - Article
@@ -32,9 +35,10 @@ STALE_RESULTS_HRS = 24
 # pr - Press Release
 # re - Review
 # sh - Short Survey
-DOCTYPES = ['ar', 'bk', 'cp'] # TODO: Review with Stephen
+ALL_DOCTYPES = ['ar', 'ab', 'bk', 'bz', 'ch', 'cp', 'cr', 'ed', 'er', 'le', 'no', 'pr', 're', 'sh']
+EXCLUDE_DOCTYPES = ['er']  # TODO: Review with Stephen
+DOCTYPES = [dt for dt in ALL_DOCTYPES if dt not in EXCLUDE_DOCTYPES]
 DOCTYPES_QUERY = ' OR '.join(DOCTYPES)
-
 
 #
 # -- Public functions
@@ -90,14 +94,7 @@ def get_search_results(query, categories, search_id=None):
     """
     results = {}
 
-    # TODO: Decide whether we want to do auto-cleanup; maybe there should be a script to delete
-    # records and vacuum the tables?
-    # # Delete stale search results
-    # searches_cutoff = timezone.now()-timezone.timedelta(hours=STALE_RESULTS_HRS)
-    # searches = Search.objects.exclude(id=search_id).filter(created__lt=searches_cutoff)
-    # for search in searches:
-    #     search.delete() # this will cascade to the related objects
-
+    # TODO: Script to cleanup old records and vacuum tables
     # TODO: If fresh search results exist for the specified query and categories, return them immediately
 
     # Create Search object to link results back to
@@ -106,13 +103,17 @@ def get_search_results(query, categories, search_id=None):
     else:
         search = Search._init_search(query, categories)
 
+    # TODO: comment, error message
+    assert query == search.query, f"Query mismatch, {query}, {search.query}"
+
     # Assemble list of search categories that are not already finished for the search; this allows
     # us to pick up a search where it left off if it was interrupted.
     search_categories = [c for c in categories if c not in search.context['finished_categories']]
+    print(f"get_search_results(): INFO: {query}, {search_categories}")
 
     # TODO: comment
     for category in search_categories:
-        results[category] = _get_category_search_results(search, query, category)
+        results[category] = _get_category_search_results(search, category)
         search.context['finished_categories'].append(category)
         search.save()
 
@@ -160,7 +161,7 @@ def get_subject_area_classifications():
 #
 
 
-def _get_category_search_results(search, query, category):
+def _get_category_search_results(search, category):
     """TODO: comment
 
     Ref: https://dev.elsevier.com/documentation/ScopusSearchAPI.wadl
@@ -169,14 +170,23 @@ def _get_category_search_results(search, query, category):
 
     Arguments:
     search -- a Search object that search results will be linked back to
-    query -- a string; the search query
     category -- a string; a scopus category abbreviation (e.g. 'CHEM')
     """
     # TODO: comment
+    SearchResult_Entry.objects.filter(search=search, category_abbr=category).delete()
+
+    # TODO: comment
     sources = ScopusSource.objects.filter(classifications__category_abbr=category).exclude(Q(p_issn__isnull=True) & Q(e_issn__isnull=True))
     issns = sources.distinct('p_issn', 'e_issn').values_list('p_issn', 'e_issn')
-    for p_issn, e_issn in issns:
-        _category_issn_search(search, query, category, p_issn=p_issn, e_issn=e_issn)
+    issns_count = issns.count()
+
+    # TODO: comment
+    for index, (p_issn, e_issn) in enumerate(issns):
+        if index % 100 == 0:
+            print(f"_get_category_search_results(): INFO: {search.query}, {category}, source {index} of {issns_count}")
+
+        # TODO: comment
+        _category_issn_search(search, category, p_issn=p_issn, e_issn=e_issn)
 
     # Summarize results with a dictionary of entry counts
     counts = {}
@@ -212,7 +222,7 @@ def _get_category_search_results(search, query, category):
     return counts
 
 
-def _category_issn_search(search, query, category, p_issn=None, e_issn=None):
+def _category_issn_search(search, category, p_issn=None, e_issn=None):
     """TODO: comment
 
     Ref: https://dev.elsevier.com/documentation/ScopusSearchAPI.wadl
@@ -221,7 +231,6 @@ def _category_issn_search(search, query, category, p_issn=None, e_issn=None):
 
     Arguments:
     search -- a Search object that search results will be linked back to
-    query -- a string; the search query
     category -- a string; a scopus category abbreviation (e.g. 'CHEM')
     p_issn -- TODO
     e_issn -- TODO
@@ -234,13 +243,13 @@ def _category_issn_search(search, query, category, p_issn=None, e_issn=None):
     # TODO: add doctype limitation to query
     # TODO: Verify that ISSN query formulation is correct
     issn_subquery = ' OR '.join(issns)
-    query = f'ABS("{query}") AND SUBJAREA({category}) AND ISSN({issn_subquery})'
+    query = f'ABS("{search.query}") AND SUBJAREA({category}) AND ISSN({issn_subquery})'
     query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query={query}'
 
     # Paginate through Scopus search results
     while True:
-        if start % 500 == 0:
-            print(f"_category_issn_search(): INFO: {category}, {issns}, '{query}', page {int(start / ELSEVIER_LIMIT)}")
+        if start % 1000 == 0:
+            print(f"_category_issn_search(): INFO: {search.query}, {category}, {query}, page {int(start / ELSEVIER_LIMIT)}")
 
         # TODO: comment
         url = f'{query_url}&start={start}&count={count}'
@@ -270,18 +279,38 @@ def _category_issn_search(search, query, category, p_issn=None, e_issn=None):
         # Add result entries to database
         for entry in entries:
             try:
-                # Get source ID and name from entry
+                # Sanity check ISSN
                 assert (entry.get('prism:issn') in issns) or (entry.get('prism:eIssn') in issns), \
                     f"ISSN mismatch, {entry.get('prism:issn')}, {entry.get('prism:eIssn')}, {issns}"
+
+                # Clean scopus ID
+                scopus_id = entry['dc:identifier'].replace('SCOPUS_ID:','')
+
+                # Clean DOI
+                doi = entry.get('prism:doi') or None
+                doi = doi if len(doi) <= DOI_MAX_LENGTH else None
+
+                # Clean document type (subtype)
+                subtype = entry['subtype'] or ''
+                subtype = subtype if len(subtype) == DOCTYPE_MAX_LENGTH else None
+
+                # Sanity check subtype
+                if subtype in EXCLUDE_DOCTYPES:
+                    print(f"_category_issn_search(): WARNING: {search.query}, {category}, entry ignored ({subtype}, {scopus_id}, {doi})")
+
+                # Clean first author (creator)
+                creator = entry.get('dc:creator') or ''
+                creator = creator[:AUTHOR_MAX_LENGTH] if creator else None
 
                 # Create search results record for entry
                 SearchResult_Entry.objects.create(
                     search=search,
                     category_abbr=category,
-                    scopus_id=entry['dc:identifier'].replace('SCOPUS_ID:',''),
+                    scopus_id=scopus_id,
+                    doi=doi,
                     title=entry['dc:title'],
-                    first_author=entry.get('dc:creator'), # TODO: Sometimes this is missing
-                    document_type=entry['subtype'],
+                    first_author=creator,
+                    document_type=subtype,
                     publication_name=entry['prism:publicationName'],
                     scopus_source=ScopusSource.objects.filter(source_id=entry['source-id']).first(),
                 )

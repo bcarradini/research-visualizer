@@ -120,6 +120,7 @@ class SearchResult_Entry(models.Model):
 
     # Entry
     scopus_id = models.CharField(max_length=16)
+    doi = models.CharField(max_length=256, blank=True, null=True)
     title = models.TextField()
     first_author = models.CharField(max_length=128, blank=True, null=True)
     document_type = models.CharField(max_length=2, blank=True, null=True)
