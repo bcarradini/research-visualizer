@@ -101,23 +101,19 @@ def get_search_results(query, categories=None, search_id=None):
     # TODO: Script to cleanup old records and vacuum tables
     # TODO: If fresh search results exist for the specified query and categories, return them immediately
 
-    # If no categories were specified, default to all categories
-    if not categories:
-        categories = list(ScopusClassification.objects.distinct('category_abbr').values_list('category_abbr', flat=True))
-
     # Create Search object to link results back to
     if search_id:
         search = Search.objects.get(id=search_id)
     else:
-        search = Search._init_search(query, categories)
+        search = Search.init_search(query, categories) # if categories is None, will be treated as "all categories"
 
     # TODO: comment, error message
     assert query == search.query, f"Query mismatch, {query}, {search.query}"
+    print(f"get_search_results(): INFO: {query}, {search}, {search.context['categories']}, {search.context['finished_categories']}")
 
     # Assemble list of search categories that are not already finished for the search; this allows
     # us to pick up a search where it left off if it was interrupted.
-    search_categories = [c for c in categories if c not in search.context['finished_categories']]
-    print(f"get_search_results(): INFO: {query}, {search}, {categories}, {search_categories}")
+    search_categories = [c for c in search.context['categories'] if c not in search.context['finished_categories']]
 
     # TODO: comment
     for category in search_categories:
