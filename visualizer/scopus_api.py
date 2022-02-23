@@ -50,7 +50,11 @@ DOCTYPES_QUERY = ' OR '.join(DOCTYPES)
 
 
 def get_abstract(scopus_id):
-    """TODO: Comment"""
+    """Get abstract for document identified by Scopus ID.
+
+    Arguments:
+    scopus_id -- a Scopus ID
+    """
     # Request Scopus abstract
     url = f'{ELSEVIER_BASE_URL}/content/abstract/scopus_id/{scopus_id}'
     response = requests.get(url, headers=ELSEVIER_HEADERS)
@@ -97,28 +101,25 @@ def get_search_results(query, categories=None, search_id=None):
     search_id -- (optional) a Search object ID; identifies a Search object that should be used to organize search 
         results; when not provided, a new Search object will be created
     """
-    # TODO: Script to cleanup old records and vacuum tables
-    # TODO: If fresh search results exist for the specified query and categories, return them immediately
-
     # Create Search object to link results back to
     if search_id:
         search = Search.objects.get(id=search_id)
+        assert query == search.query, f"Query mismatch, {query}, {search.query}"
     else:
-        search = Search.init_search(query, categories) # if categories is None, will be treated as "all categories"
+        search = Search.init_search(query, categories)
 
-    # TODO: comment, error message
-    assert query == search.query, f"Query mismatch, {query}, {search.query}"
+    # Log what's about to happen
     print(f"get_search_results(): INFO: {query}, {search}, {search.context['categories']}, {search.context['finished_categories']}")
 
-    # Assemble list of search categories that are not already finished for the search; this allows
-    # us to pick up a search where it left off if it was interrupted.
+    # Assemble list of categories that are not already finished (i.e. still need to be searched);
+    # this allows us to pick up an interrupted search where it left off.
     search_categories = [c for c in search.context['categories'] if c not in search.context['finished_categories']]
 
-    # TODO: comment
+    # Generate search results for each category
     for category in search_categories:
         _search_category(search, category)
 
-    # TODO: comment
+    # Mark the search as finished
     search.finished = True
     search.save()
 
