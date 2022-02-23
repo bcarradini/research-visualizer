@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 
 # Internal
 from visualizer.models import ScopusClassification, ScopusSource
-from visualizer.scopus_api import get_subject_area_classifications
+from visualizer.scopus import get_subject_area_classifications
 
 # Constants
 CSV_FILEPATH = './visualizer/static/data/scopus_sources.csv'

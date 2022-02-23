@@ -11,7 +11,7 @@ from django.shortcuts import render
 # Internal
 from project.worker import queue_job
 from visualizer.models import Search
-from visualizer.scopus_api import get_abstract, get_search_results, get_subject_area_classifications
+from visualizer.scopus import get_abstract, get_search_results, get_subject_area_classifications
 
 
 #
@@ -32,6 +32,13 @@ def abstract(request, scopus_id):
 
 def search(request):
     """Get Scopus search results for query across specified subject categories.
+
+    Notes:
+    - Search will be performed against abstracts in the Scopus database
+    - Search uses a "loose or approximate phrase" approach, meaning that multi-word queries are
+        treated as whole phrases but that punctuation/pluralization are ignored. For example,
+        if the query is "social media", documents that contain only "social" or "media" will be
+        excluded but documents containing "social-media" or "social medias" will be included.
 
     Arguments:
     request -- an HttpRequest object with request body that contains:

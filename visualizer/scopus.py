@@ -70,29 +70,18 @@ def get_abstract(scopus_id):
 
 
 def get_search_results(query, categories=None, search_id=None):
-    """Get search results for query within the specified subject categories.
+    """Get dictionary of search results for query within the specified subject categories.
 
     !!!
     IMPORTANT: This task is long-running and is designed to be queued for an asynchronous worker.
     !!!
 
-    Example return:
-    {
-        "CHEM": {                           // category abbreviation
-            "1600": {                           // number of query hits for sources with specific classification
-                "name": "Chemistry (all)",
-                "count": 5,
-            },
-            "unknown": {                        // number of query hits for sources with unknown classification
-                "name": "Unknown",                 
-                "count": 3,
-            },
-            "total": {                          // number of query hits within category
-                "name": "Total",                 
-                "count": 8,
-            },
-        },
-    }
+    Notes:
+    - Search will be performed against abstracts in the Scopus database
+    - Search uses a "loose or approximate phrase" approach, meaning that multi-word queries are
+        treated as whole phrases but that punctuation/pluralization are ignored. For example,
+        if the query is "social media", documents that contain only "social" or "media" will be
+        excluded but documents containing "social-media" or "social medias" will be included.
 
     Arguments:
     query -- a string; the search query
@@ -115,7 +104,7 @@ def get_search_results(query, categories=None, search_id=None):
     # this allows us to pick up an interrupted search where it left off.
     search_categories = [c for c in search.context['categories'] if c not in search.context['finished_categories']]
 
-    # Generate search results for each category
+    # Generate search results for each category; results are stored in the database, not returned
     for category in search_categories:
         _search_category(search, category)
 
@@ -123,14 +112,19 @@ def get_search_results(query, categories=None, search_id=None):
     search.finished = True
     search.save()
 
-    # TODO: Assemble results from data in database for search object
-    print(f"get_search_results(): INFO: {query}, assemble results")
+    # Assemble results from database for search
     results = {}
+    for category in search.context['categories']:
+        category_results = SearchResult_Category.filter(search=search, category_abbr=category).first()
+        if category_results:
+            results['category'] = category_results.counts
+        else:
+            results['category'] = None
 
     return results
 
 def get_subject_area_classifications():
-    """TODO: Comment
+    """Get Scopus subject area classifications (and parent categories).
 
     Ref: https://dev.elsevier.com/documentation/SubjectClassificationsAPI.wadl
     """
@@ -233,9 +227,6 @@ def _search_category(search, category):
         category_abbr=category,
         counts=counts,
     )
-
-    # TODO: comment
-    return counts
 
 
 def _search_category_issn(search, category, issn):
