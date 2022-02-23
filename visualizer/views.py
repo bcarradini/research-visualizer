@@ -1,5 +1,6 @@
-
-
+"""
+Views to support Visualizer URLs
+"""
 # 3rd party
 from django.http import JsonResponse
 from django.shortcuts import render

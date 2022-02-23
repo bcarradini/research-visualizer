@@ -1,10 +1,12 @@
 """
-TODO: comment
+Scopus API wrappers
 """
+# Standard
+from time import sleep
 
 # 3rd party
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, F
 from django.utils import timezone
 import requests
 
@@ -14,7 +16,8 @@ from visualizer.models import ScopusClassification, ScopusSource, Search, Search
 # Constants
 ELSEVIER_BASE_URL = 'http://api.elsevier.com'
 ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
-ELSEVIER_LIMIT = 100
+ELSEVIER_PAGE_LIMIT = 100
+ELSEVIER_SEARCH_LIMIT = 200 # TODO: put back to 5000
 RETRY_LIMIT = 5
 RETRY_PAUSE = 30
 STALE_RESULTS_HRS = 24
@@ -22,7 +25,7 @@ AUTHOR_MAX_LENGTH = SearchResult_Entry._meta.get_field('first_author').max_lengt
 DOCTYPE_MAX_LENGTH = SearchResult_Entry._meta.get_field('document_type').max_length
 DOI_MAX_LENGTH = SearchResult_Entry._meta.get_field('doi').max_length
 
-# Scopus Document Types (search results -> entry -> `subtype`)
+# Scopus Document Types
 # ar - Article
 # ab - Abstract Report
 # bk - Book
@@ -63,7 +66,7 @@ def get_abstract(scopus_id):
     return abstract
 
 
-def get_search_results(query, categories, search_id=None):
+def get_search_results(query, categories=None, search_id=None):
     """Get search results for query within the specified subject categories.
 
     !!!
@@ -90,14 +93,17 @@ def get_search_results(query, categories, search_id=None):
 
     Arguments:
     query -- a string; the search query
-    categories -- a list of strings; scopus category abbreviations (e.g. ['MULT','AGRI','CHEM'])
-    search_id -- (optional) a Search object ID; identifies a Search object that should be used to
-        organize search results; when not provided, a new Search object will be created
+    categories -- (optional) a list of scopus category abbreviations (e.g. ['MULT','AGRI','CHEM']); when specified, 
+        search will be limited to those categories; when unspecified, search will be performed across all categories
+    search_id -- (optional) a Search object ID; identifies a Search object that should be used to organize search 
+        results; when not provided, a new Search object will be created
     """
-    results = {}
-
     # TODO: Script to cleanup old records and vacuum tables
     # TODO: If fresh search results exist for the specified query and categories, return them immediately
+
+    # If no categories were specified, default to all categories
+    if not categories:
+        categories = list(ScopusClassification.objects.distinct('category_abbr').values_list('category_abbr', flat=True))
 
     # Create Search object to link results back to
     if search_id:
@@ -111,19 +117,21 @@ def get_search_results(query, categories, search_id=None):
     # Assemble list of search categories that are not already finished for the search; this allows
     # us to pick up a search where it left off if it was interrupted.
     search_categories = [c for c in categories if c not in search.context['finished_categories']]
-    print(f"get_search_results(): INFO: {query}, {search_categories}")
+    print(f"get_search_results(): INFO: {query}, {search}, {categories}, {search_categories}")
 
     # TODO: comment
     for category in search_categories:
-        results[category] = _get_category_search_results(search, category)
-        search.context['finished_categories'].append(category)
-        search.save()
+        _search_category(search, category)
 
+    # TODO: comment
     search.finished = True
-    saerch.save()
+    search.save()
+
+    # TODO: Assemble results from data in database for search object
+    print(f"get_search_results(): INFO: {query}, assemble results")
+    results = {}
 
     return results
-
 
 def get_subject_area_classifications():
     """TODO: Comment
@@ -163,7 +171,7 @@ def get_subject_area_classifications():
 #
 
 
-def _get_category_search_results(search, category):
+def _search_category(search, category):
     """TODO: comment
 
     Ref: https://dev.elsevier.com/documentation/ScopusSearchAPI.wadl
@@ -176,19 +184,29 @@ def _get_category_search_results(search, category):
     """
     # TODO: comment
     SearchResult_Entry.objects.filter(search=search, category_abbr=category).delete()
+    SearchResult_Category.objects.filter(search=search, category_abbr=category).delete()
 
     # TODO: comment
-    sources = ScopusSource.objects.filter(classifications__category_abbr=category).exclude(Q(p_issn__isnull=True) & Q(e_issn__isnull=True))
-    issns = sources.distinct('p_issn', 'e_issn').values_list('p_issn', 'e_issn')
+    sources = ScopusSource.objects.filter(classifications__category_abbr=category)
+
+    # TODO: comment
+    last_issn_q = Q()
+    if category == search.context['last_category'] and search.context.get('last_issn'):
+        last_issn_q = Q(issn__gt=search.context.get('last_issn'))
+
+    # TODO: comment
+    p_issns = sources.annotate(issn=F('p_issn')).filter(last_issn_q).exclude(issn__isnull=True).distinct('issn').values('issn')
+    e_issns = sources.annotate(issn=F('e_issn')).filter(last_issn_q).exclude(issn__isnull=True).distinct('issn').values('issn')
+    issns = p_issns.union(e_issns).order_by('issn')
     issns_count = issns.count()
 
     # TODO: comment
-    for index, (p_issn, e_issn) in enumerate(issns):
+    for index, issn in enumerate(issns):
         if index % 100 == 0:
-            print(f"_get_category_search_results(): INFO: {search.query}, {category}, source {index} of {issns_count}")
+            print(f"_search_category(): INFO: {search.query}, {category}, ISSN {index} of {issns_count}")
 
         # TODO: comment
-        _category_issn_search(search, category, p_issn=p_issn, e_issn=e_issn)
+        _search_category_issn(search, category, issn=issn['issn'])
 
     # Summarize results with a dictionary of entry counts
     counts = {}
@@ -224,7 +242,7 @@ def _get_category_search_results(search, category):
     return counts
 
 
-def _category_issn_search(search, category, p_issn=None, e_issn=None):
+def _search_category_issn(search, category, issn):
     """TODO: comment
 
     Ref: https://dev.elsevier.com/documentation/ScopusSearchAPI.wadl
@@ -234,25 +252,20 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
     Arguments:
     search -- a Search object that search results will be linked back to
     category -- a string; a scopus category abbreviation (e.g. 'CHEM')
-    p_issn -- TODO
-    e_issn -- TODO
+    issn -- TODO: comment
     """
-    assert p_issn or e_issn, f"ISSN missing"
-    issns = list(filter(lambda issn: bool(issn), [p_issn, e_issn]))
-    start, count = 0, ELSEVIER_LIMIT
+    start, count = 0, ELSEVIER_PAGE_LIMIT
     retries = 0
 
     # Assemble query URL without pagination markers
     # TODO: add doctype limitation to query
-    # TODO: Verify that ISSN query formulation is correct
-    issn_subquery = ' OR '.join(issns)
-    query = f'ABS("{search.query}") AND SUBJAREA({category}) AND ISSN({issn_subquery})'
+    query = f'ABS("{search.query}") AND SUBJAREA({category}) AND ISSN({issn})'
     query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query={query}'
 
     # Paginate through Scopus search results
     while True:
         if start % 1000 == 0:
-            print(f"_category_issn_search(): INFO: {search.query}, {category}, {query}, page {int(start / ELSEVIER_LIMIT)}")
+            print(f"_search_category_issn(): INFO: {search.query}, {category}, {issn}, page {int(start / ELSEVIER_PAGE_LIMIT)}")
 
         # TODO: comment
         url = f'{query_url}&start={start}&count={count}'
@@ -261,9 +274,9 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
             response.raise_for_status()
             retries = 0
         except Exception as exc:
-            print(f"_category_issn_search(): ERROR: {exc}, {url}, {response.json()}")
+            print(f"_search_category_issn(): ERROR: {exc}, {url}, {response.json()}")
             if retries < 5:
-                print(f"_category_issn_search(): INFO: will retry in {RETRY_PAUSE} seconds")
+                print(f"_search_category_issn(): INFO: will retry in {RETRY_PAUSE} seconds")
                 sleep(RETRY_PAUSE)
                 retries += 1
                 continue
@@ -282,15 +295,15 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
             if 'error' in entries[0]:
                 raise Exception({entries[0]['error']})
         except Exception as exc:
-            print(f"_category_issn_search(): ERROR: {exc}, {url}, {response.json()}")
+            print(f"_search_category_issn(): ERROR: {exc}, {url}, {response.json()}")
             raise exc
 
         # Add result entries to database
         for entry in entries:
             try:
                 # Sanity check ISSN
-                assert (entry.get('prism:issn') in issns) or (entry.get('prism:eIssn') in issns), \
-                    f"ISSN mismatch, {entry.get('prism:issn')}, {entry.get('prism:eIssn')}, {issns}"
+                assert issn in [entry.get('prism:issn'), entry.get('prism:eIssn')], \
+                    f"ISSN mismatch, {issn}, {entry.get('prism:issn')}, {entry.get('prism:eIssn')}"
 
                 # Clean scopus ID
                 scopus_id = entry['dc:identifier'].replace('SCOPUS_ID:','')
@@ -305,7 +318,7 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
 
                 # Sanity check subtype
                 if subtype in EXCLUDE_DOCTYPES:
-                    print(f"_category_issn_search(): WARNING: {search.query}, {category}, entry ignored ({subtype}, {scopus_id}, {doi})")
+                    print(f"_search_category_issn(): WARNING: {search.query}, {category}, {issn}, entry ignored ({subtype}, {scopus_id}, {doi})")
 
                 # Clean first author (creator)
                 creator = entry.get('dc:creator') or ''
@@ -324,12 +337,16 @@ def _category_issn_search(search, category, p_issn=None, e_issn=None):
                     scopus_source=ScopusSource.objects.filter(source_id=entry['source-id']).first(),
                 )
             except Exception as exc:
-                print(f"_category_issn_search(): ERROR: {exc}, {url}, {entry}")
+                print(f"_search_category_issn(): ERROR: {exc}, {url}, {entry}")
                 raise exc
 
         # Move on to next page of results
         start += count
 
         # TODO: comment
-        if start >= 5000:
+        if start >= ELSEVIER_SEARCH_LIMIT:
             break
+
+    # Record last category & ISSN searched
+    search.context.update({'last_category': category, 'last_issn': issn})
+    search.save()

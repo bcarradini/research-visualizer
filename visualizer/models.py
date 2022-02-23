@@ -88,7 +88,7 @@ class Search(TimeStampedModel):
 
     @staticmethod
     def _init_context(categories):
-        return {'categories': categories, 'finished_categories': []}
+        return {'categories': categories, 'finished_categories': [], 'last_category': None, 'last_issn': None}
 
 
 class SearchResult_Category(TimeStampedModel):

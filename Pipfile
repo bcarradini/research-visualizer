@@ -16,6 +16,7 @@ psycopg2 = "~=2.8.6"              # pinned for feature stability
 requests = "~=2.25.1"             # pinned for feature stability
 rq = "*"                          # pinned for feature stability
 rq-dashboard = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.7"
