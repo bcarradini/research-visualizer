@@ -31,7 +31,7 @@ def abstract(request, scopus_id):
 
 
 def search(request):
-    """Get Scopus search results for query across specified subject categories.
+    """Get Scopus search results for query across specified subject area categories.
 
     Notes:
     - Search will be performed against abstracts in the Scopus database
@@ -72,13 +72,8 @@ def index(request):
 
 
 def _search(query, categories=None):
-    """Perform query-based search, scoped by the provided list of categories.
-
-    Arguments:
-    query -- a string; the search query
-    categories -- (optional) a list of scopus category abbreviations (e.g. ['AGRI','CHEM']);
-        when specified, search will be limited to those categories; when unspecified, search
-        will be performed across all categories
+    """Private handler for public `search()` view. See that function for more details. This is for
+    testing convenice, so that async jobs can be queued without an HTTP request being involved.
     """
     search_obj = Search.init_search(query, categories)
     job = queue_job(get_search_results, args=(query, categories, search_obj.id), job_timeout=12*60*60)

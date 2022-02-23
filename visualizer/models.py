@@ -25,7 +25,8 @@ class ScopusClassification(TimeStampedModel):
     category_abbr = models.CharField(max_length=4)
     category_name = models.CharField(max_length=64)
 
-    # TODO: unique constraint: code
+    class Meta(object):
+        unique_together = [('code')]
 
     def __str__(self):
         return f"{self.name} ({self.category_abbr})"
@@ -41,7 +42,8 @@ class ScopusSource(TimeStampedModel):
     # Classification codes; the same source may be assigned to multiple classifications    
     classifications = models.ManyToManyField(ScopusClassification, db_index=True, related_name='sources')
 
-    # TODO: unique constraint: source_id
+    class Meta(object):
+        unique_together = [('source_id')]
 
     def __str__(self):
         return f"{self.source_name} ({self.source_id})"
@@ -114,7 +116,9 @@ class SearchResult_Category(TimeStampedModel):
     #   }
     counts = jsonb.JSONField(default=dict)
 
-    # TODO: unique constraint: search + category_abbr
+    class Meta(object):
+        unique_together = [('search', 'category_abbr')]
+    
 
 class SearchResult_Entry(models.Model):
     # Executed search
@@ -133,3 +137,7 @@ class SearchResult_Entry(models.Model):
     # Entry publication
     publication_name = models.TextField()
     scopus_source = models.ForeignKey(ScopusSource, blank=True, null=True, related_name='entries', on_delete=models.CASCADE)
+
+    class Meta(object):
+        unique_together = [('search', 'category_abbr', 'scopus_id')]
+

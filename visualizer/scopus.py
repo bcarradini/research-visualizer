@@ -18,7 +18,7 @@ ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': 
 ELSEVIER_PAGE_LIMIT = 100
 ELSEVIER_SEARCH_LIMIT = 200 # TODO: put back to 5000
 RETRY_LIMIT = 5
-RETRY_PAUSE = 30
+RETRY_PAUSE = 60
 STALE_RESULTS_HRS = 24
 AUTHOR_MAX_LENGTH = SearchResult_Entry._meta.get_field('first_author').max_length
 DOCTYPE_MAX_LENGTH = SearchResult_Entry._meta.get_field('document_type').max_length
@@ -70,7 +70,7 @@ def get_abstract(scopus_id):
 
 
 def get_search_results(query, categories=None, search_id=None):
-    """Get dictionary of search results for query within the specified subject categories.
+    """Return dictionary of search results for query within the specified subject area categories.
 
     !!!
     IMPORTANT: This task is long-running and is designed to be queued for an asynchronous worker.
@@ -85,10 +85,11 @@ def get_search_results(query, categories=None, search_id=None):
 
     Arguments:
     query -- a string; the search query
-    categories -- (optional) a list of scopus category abbreviations (e.g. ['MULT','AGRI','CHEM']); when specified, 
-        search will be limited to those categories; when unspecified, search will be performed across all categories
-    search_id -- (optional) a Search object ID; identifies a Search object that should be used to organize search 
-        results; when not provided, a new Search object will be created
+    categories -- (optional) a list of scopus category abbreviations (e.g. ['MULT','AGRI','CHEM']);
+        when specified, search will be limited to those categories; when unspecified, search will
+        be performed across all categories
+    search_id -- (optional) a Search object ID; identifies a Search object that should be used to
+        organize search results; when not provided, a new Search object will be created
     """
     # Create Search object to link results back to
     if search_id:
@@ -124,7 +125,7 @@ def get_search_results(query, categories=None, search_id=None):
     return results
 
 def get_subject_area_classifications():
-    """Get Scopus subject area classifications (and parent categories).
+    """Return dictionary of Scopus subject area classifications (and parent categories).
 
     Ref: https://dev.elsevier.com/documentation/SubjectClassificationsAPI.wadl
     """
@@ -162,20 +163,12 @@ def get_subject_area_classifications():
 
 
 def _search_category(search, category):
-    """TODO: comment
-
-    Ref: https://dev.elsevier.com/documentation/ScopusSearchAPI.wadl
-    Ref: https://dev.elsevier.com/sc_search_tips.html
-    Ref: https://dev.elsevier.com/sc_search_views.html
+    """Perform search within subject area category; store results in the database.
 
     Arguments:
-    search -- a Search object that search results will be linked back to
+    search -- a Search object that defines the parameters of the search
     category -- a string; a scopus category abbreviation (e.g. 'CHEM')
     """
-    # TODO: comment
-    SearchResult_Entry.objects.filter(search=search, category_abbr=category).delete()
-    SearchResult_Category.objects.filter(search=search, category_abbr=category).delete()
-
     # TODO: comment
     sources = ScopusSource.objects.filter(classifications__category_abbr=category)
 
@@ -222,24 +215,25 @@ def _search_category(search, category):
     }
 
     # Create search results record for category
-    SearchResult_Category.objects.create(
+    SearchResult_Category.objects.update_or_create(
         search=search,
         category_abbr=category,
-        counts=counts,
+        defaults={'counts': counts}
     )
 
 
 def _search_category_issn(search, category, issn):
-    """TODO: comment
+    """Perform search within subject area category for specific ISSN; store results in the database.
 
-    Ref: https://dev.elsevier.com/documentation/ScopusSearchAPI.wadl
-    Ref: https://dev.elsevier.com/sc_search_tips.html
-    Ref: https://dev.elsevier.com/sc_search_views.html
+    References:
+    https://dev.elsevier.com/documentation/ScopusSearchAPI.wadl
+    https://dev.elsevier.com/sc_search_tips.html
+    https://dev.elsevier.com/sc_search_views.html
 
     Arguments:
-    search -- a Search object that search results will be linked back to
+    search -- a Search object that defines the parameters of the search
     category -- a string; a scopus category abbreviation (e.g. 'CHEM')
-    issn -- TODO: comment
+    issn -- a string; an International Standard Serial Number
     """
     start = 0
     retries = 0
@@ -253,7 +247,7 @@ def _search_category_issn(search, category, issn):
         if start % 1000 == 0:
             print(f"_search_category_issn(): INFO: {search.query}, {category}, {issn}, page {int(start / ELSEVIER_PAGE_LIMIT)}")
 
-        # TODO: comment
+        # Add pagination markers to query URL and perform GET request
         url = f'{query_url}&start={start}&count={ELSEVIER_PAGE_LIMIT}'
         response = requests.get(url, headers=ELSEVIER_HEADERS)
         try:
@@ -261,7 +255,8 @@ def _search_category_issn(search, category, issn):
             retries = 0
         except Exception as exc:
             print(f"_search_category_issn(): ERROR: {exc}, {url}, {response.json()}")
-            if retries < 5:
+            # In the event of a temporary network issue, retry a few times before bailing out
+            if retries < RETRY_LIMIT:
                 print(f"_search_category_issn(): INFO: will retry in {RETRY_PAUSE} seconds")
                 sleep(RETRY_PAUSE)
                 retries += 1
@@ -330,7 +325,7 @@ def _search_category_issn(search, category, issn):
         # Move on to next page of results
         start += ELSEVIER_PAGE_LIMIT
 
-        # TODO: comment
+        # Quit if search limit reached; we can't retrieve an infinite number of query results
         if start >= ELSEVIER_SEARCH_LIMIT:
             break
 
