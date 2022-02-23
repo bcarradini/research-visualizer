@@ -7,7 +7,6 @@ from time import sleep
 # 3rd party
 from django.conf import settings
 from django.db.models import Q, F
-from django.utils import timezone
 import requests
 
 # Internal
@@ -60,7 +59,7 @@ def get_abstract(scopus_id):
     try:
         abstract = response.json()['abstracts-retrieval-response']['coredata']['dc:description']['abstract']['ce:para']
     except Exception as exc:
-        print(f"get_abstract(): ERROR: {exc}, {entry}")
+        print(f"get_abstract(): ERROR: {exc}, {url}, {response.json()}")
         raise exc
 
     return abstract
@@ -250,13 +249,12 @@ def _search_category_issn(search, category, issn):
     category -- a string; a scopus category abbreviation (e.g. 'CHEM')
     issn -- TODO: comment
     """
-    start, count = 0, ELSEVIER_PAGE_LIMIT
+    start = 0
     retries = 0
 
     # Assemble query URL without pagination markers
     # TODO: add doctype limitation to query
-    query = f'ABS("{search.query}") AND SUBJAREA({category}) AND ISSN({issn})'
-    query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query={query}'
+    query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query=ABS("{search.query}") AND SUBJAREA({category}) AND ISSN({issn})'
 
     # Paginate through Scopus search results
     while True:
@@ -264,7 +262,7 @@ def _search_category_issn(search, category, issn):
             print(f"_search_category_issn(): INFO: {search.query}, {category}, {issn}, page {int(start / ELSEVIER_PAGE_LIMIT)}")
 
         # TODO: comment
-        url = f'{query_url}&start={start}&count={count}'
+        url = f'{query_url}&start={start}&count={ELSEVIER_PAGE_LIMIT}'
         response = requests.get(url, headers=ELSEVIER_HEADERS)
         try:
             response.raise_for_status()
@@ -314,7 +312,8 @@ def _search_category_issn(search, category, issn):
 
                 # Sanity check subtype
                 if subtype in EXCLUDE_DOCTYPES:
-                    print(f"_search_category_issn(): WARNING: {search.query}, {category}, {issn}, entry ignored ({subtype}, {scopus_id}, {doi})")
+                    print(f"_search_category_issn(): WARNING: {search.query}, {category}, {issn}, "+
+                        f"entry ignored ({subtype}, {scopus_id}, {doi})")
 
                 # Clean first author (creator)
                 creator = entry.get('dc:creator') or ''
@@ -337,7 +336,7 @@ def _search_category_issn(search, category, issn):
                 raise exc
 
         # Move on to next page of results
-        start += count
+        start += ELSEVIER_PAGE_LIMIT
 
         # TODO: comment
         if start >= ELSEVIER_SEARCH_LIMIT:
