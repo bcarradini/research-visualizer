@@ -2,6 +2,7 @@
 Scopus API wrappers
 """
 # Standard
+from datetime import datetime
 from time import sleep
 
 # 3rd party
@@ -16,8 +17,8 @@ from visualizer.models import ScopusClassification, ScopusSource, Search, Search
 # Constants
 ELSEVIER_BASE_URL = 'http://api.elsevier.com'
 ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
-ELSEVIER_PAGE_LIMIT = 100
-ELSEVIER_SEARCH_LIMIT = 5000
+ELSEVIER_PAGE_LIMIT = 200 # https://dev.elsevier.com/api_key_settings.html
+ELSEVIER_SEARCH_LIMIT = 5000 # TODO: move to cursors: https://dev.elsevier.com/support.html
 RETRY_LIMIT = 5
 RETRY_PAUSE = 60
 STALE_RESULTS_HRS = 24
@@ -257,13 +258,24 @@ def _search_category_issn(search, category, issn):
             response.raise_for_status()
             retries = 0
         except Exception as exc:
+            # If we've exceeded our quota (429 TOO MANY REQUESTS), log the quota reset timestamp
+            # ref: https://dev.elsevier.com/api_key_settings.html
+            if response.status_code == 429:
+                print(f"_search_category_issn(): ERROR: {exc}, {url}, {response.json()}, {response.headers}")
+                quota_reset = response.headers.get('X-RateLimit-Reset')
+                if quota_reset:
+                    print(f"_search_category_issn(): INFO: Quota will reset at {datetime.fromtimestamp(int(quota_reset))}")
+                raise exc
+
+            # If we haven't exceeded our quota, attempt retries; it may be a temporary network issue
             print(f"_search_category_issn(): ERROR: {exc}, {url}, {response.json()}")
-            # In the event of a temporary network issue, retry a few times before bailing out
             if retries < RETRY_LIMIT:
                 print(f"_search_category_issn(): INFO: will retry in {RETRY_PAUSE} seconds")
                 sleep(RETRY_PAUSE)
                 retries += 1
                 continue
+
+            # Give up an raise exception
             raise exc
 
         # Unpack successful response and serialize data
