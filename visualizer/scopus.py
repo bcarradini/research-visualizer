@@ -16,7 +16,7 @@ from visualizer.models import ScopusClassification, ScopusSource, Search, Search
 ELSEVIER_BASE_URL = 'http://api.elsevier.com'
 ELSEVIER_HEADERS = {'X-ELS-APIKey': settings.SCOPUS_API_KEY, 'X-ELS-Insttoken': settings.SCOPUS_INST_TOKEN, 'Accept': 'application/json'}
 ELSEVIER_PAGE_LIMIT = 100
-ELSEVIER_SEARCH_LIMIT = 200 # TODO: put back to 5000
+ELSEVIER_SEARCH_LIMIT = 5000
 RETRY_LIMIT = 5
 RETRY_PAUSE = 60
 STALE_RESULTS_HRS = 24
@@ -108,6 +108,8 @@ def get_search_results(query, categories=None, search_id=None):
     # Generate search results for each category; results are stored in the database, not returned
     for category in search_categories:
         _search_category(search, category)
+        search.context['finished_categories'].append(category)
+        search.save()
 
     # Mark the search as finished
     search.finished = True
@@ -116,11 +118,11 @@ def get_search_results(query, categories=None, search_id=None):
     # Assemble results from database for search
     results = {}
     for category in search.context['categories']:
-        category_results = SearchResult_Category.filter(search=search, category_abbr=category).first()
+        category_results = SearchResult_Category.objects.filter(search=search, category_abbr=category).first()
         if category_results:
-            results['category'] = category_results.counts
+            results[category] = category_results.counts
         else:
-            results['category'] = None
+            results[category] = None
 
     return results
 
@@ -169,7 +171,7 @@ def _search_category(search, category):
     search -- a Search object that defines the parameters of the search
     category -- a string; a scopus category abbreviation (e.g. 'CHEM')
     """
-    # TODO: comment
+    # Assemble queryset of Scopus sources that map to the category
     sources = ScopusSource.objects.filter(classifications__category_abbr=category)
 
     # TODO: comment
