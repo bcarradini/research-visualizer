@@ -6,6 +6,7 @@ from time import sleep
 
 # 3rd party
 from django.conf import settings
+from django.db import IntegrityError
 from django.db.models import Q, F
 import requests
 
@@ -309,17 +310,25 @@ def _search_category_issn(search, category, issn):
                 creator = creator[:AUTHOR_MAX_LENGTH] if creator else None
 
                 # Create search results record for entry
-                SearchResult_Entry.objects.create(
-                    search=search,
-                    category_abbr=category,
-                    scopus_id=scopus_id,
-                    doi=doi,
-                    title=entry['dc:title'],
-                    first_author=creator,
-                    document_type=subtype,
-                    publication_name=entry['prism:publicationName'],
-                    scopus_source=ScopusSource.objects.filter(source_id=entry['source-id']).first(),
-                )
+                try:
+                    SearchResult_Entry.objects.create(
+                        search=search,
+                        category_abbr=category,
+                        scopus_id=scopus_id,
+                        doi=doi,
+                        title=entry['dc:title'],
+                        first_author=creator,
+                        document_type=subtype,
+                        publication_name=entry['prism:publicationName'],
+                        scopus_source=ScopusSource.objects.filter(source_id=entry['source-id']).first(),
+                    )
+                except IntegrityError as exc:
+                    # We get here if the creation attempt violates the following unique constraint:
+                    #     unique_together = [('search', 'category_abbr', 'scopus_id')]
+                    # This will happen if a document (scopus_id) is published both in print (p-ISSN)
+                    # and online (e-ISSN). We ignore this error because the document has already
+                    # been recorded in the search results for this category.
+                    pass
             except Exception as exc:
                 print(f"_search_category_issn(): ERROR: {exc}, {url}, {entry}")
                 raise exc
