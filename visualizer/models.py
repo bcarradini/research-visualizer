@@ -10,6 +10,12 @@ from django.contrib.postgres.fields import jsonb
 from django.core.exceptions import ValidationError
 from django_extensions.db.models import TimeStampedModel
 
+# Constants
+CATEGORIES = 'categories'
+FINISHED_CATEGORIES = 'finished_categories'
+NEXT_CATEGORY = 'next_category'
+NEXT_CURSOR = 'next_cursor'
+
 
 #
 # -- Scopus Subjects & Sources
@@ -63,24 +69,6 @@ class Search(TimeStampedModel):
     finished = models.BooleanField(default=False)
 
     #
-    # -- Superclass methods
-    #
-
-    def save(self, *args, **kwargs):
-        # Raise exception is categories is missing from context
-        categories = self.context.get('categories')
-        if categories is None or type(categories) is not list:
-            raise ValidationError(f"context['categories'] must be a list")
-
-        # Initialize `finished_categories` in context if it is missing
-        finished_categories = self.context.get('finished_categories')
-        if finished_categories is None or type(finished_categories) is not list:
-            self.context['finished_categories'] = []
-
-        # Invoke save() method from superclass
-        return super().save(*args, **kwargs)
-
-    #
     # -- Custom methods
     #
 
@@ -89,15 +77,15 @@ class Search(TimeStampedModel):
         # Create instance of class with query and context initialized
         return cls.objects.create(query=query, context=Search._init_context(categories))
 
-    @staticmethod
-    def _init_context(categories=None):
+    @classmethod
+    def _init_context(cls, categories=None):
         # If no categories were specified, default to all categories
         if not categories:
             categories = list(ScopusClassification.objects.distinct('category_abbr').values_list('category_abbr', flat=True))
             # TODO: Remove prioritization of SOCI after data for proposal is collected
             categories = sorted(categories, key=lambda category: 0 if category == 'SOCI' else 1)
         # Return initialize context
-        return {'categories': categories, 'finished_categories': [], 'last_category': None, 'last_issn': None}
+        return {CATEGORIES: categories, FINISHED_CATEGORIES: [], NEXT_CATEGORY: None, NEXT_CURSOR: None}
 
 
 class SearchResult_Category(TimeStampedModel):
