@@ -25,10 +25,11 @@ class Command(BaseCommand):
         To use this script:
           1. Download the latest scopus source list from https://www.scopus.com, which will be an Excel spreadsheet.
           2. Convert the first tab of the spreadsheet (e.g. "Scopus Sources October 2021") to CSV format.
-          3. Place CSV file in the `visualizer/static/data/scopus_sources.csv` directory of this project.
-          4. Execute management script, `python manage.py populate_database.py`.
-          5. If you encounter trouble parsing the script, make sure the constants defined at the top of this file 
-          still align with the column names in the latest source list.
+          3. Place CSV file at `visualizer/static/data/scopus_sources.csv` within this project.
+          4. Execute management script, `python manage.py populate_database.py --execute`.
+          5. If you encounter trouble parsing the script:
+              a. Make sure the constants defined at the top of this file still align with the column names in the latest source list.
+              b. Make sure the `encoding` specified when opening the CSV file aligns with how the CSV file was generated (utf-8? utf-8-sig? etc).
     ''')
 
     def add_arguments(self, parser):
@@ -65,13 +66,14 @@ class Command(BaseCommand):
                 })
 
         # TODO: comment
-        with open(CSV_FILEPATH, 'r') as csv_file:
+        with open(CSV_FILEPATH, 'r', encoding='utf-8-sig') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             rows = [row for row in csv_reader]
 
         # Separate header row from the rest of the rows, which describe the sources
         header_row = rows[0]
         source_rows = rows[1:]
+        print(f"{self.preamble} header_row = {header_row}")
 
         # Determine which columns hold the data we're interested in
         source_id_col_idx = header_row.index(SOURCE_ID_COLUMN_NAME)
