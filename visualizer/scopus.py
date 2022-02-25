@@ -2,6 +2,7 @@
 Scopus API wrappers
 """
 # Standard
+from collections import OrderedDict
 from datetime import datetime
 from time import sleep
 
@@ -42,7 +43,7 @@ DOI_MAX_LENGTH = SearchResult_Entry._meta.get_field('doi').max_length
 # re - Review
 # sh - Short Survey
 ALL_DOCTYPES = ['ar', 'ab', 'bk', 'bz', 'ch', 'cp', 'cr', 'ed', 'er', 'le', 'no', 'pr', 're', 'sh']
-EXCLUDE_DOCTYPES = ['er']  # TODO: Review with Stephen
+EXCLUDE_DOCTYPES = ['bk', 'ch', 'ed', 'er', 'le', 'no', 'pr', 're', 'sh']
 DOCTYPES = [dt for dt in ALL_DOCTYPES if dt not in EXCLUDE_DOCTYPES]
 DOCTYPES_QUERY = ' OR '.join(DOCTYPES)
 
@@ -196,7 +197,7 @@ def _search_category(search, category):
         _search_category_issn(search, category, issn=issn['issn'])
 
     # Summarize results with a dictionary of entry counts
-    counts = {}
+    counts = OrderedDict({})
     entries = SearchResult_Entry.objects.filter(search=search, category_abbr=category)
 
     # Get entry count for category as a whole
