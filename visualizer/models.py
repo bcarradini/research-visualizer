@@ -94,6 +94,8 @@ class Search(TimeStampedModel):
         # If no categories were specified, default to all categories
         if not categories:
             categories = list(ScopusClassification.objects.distinct('category_abbr').values_list('category_abbr', flat=True))
+            # TODO: Remove prioritization of SOCI after data for proposal is collected
+            categories = sorted(categories, key=lambda category: 0 if category == 'SOCI' else 1)
         # Return initialize context
         return {'categories': categories, 'finished_categories': [], 'last_category': None, 'last_issn': None}
 
