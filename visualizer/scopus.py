@@ -4,6 +4,8 @@ Scopus API wrappers
 # Standard
 from collections import OrderedDict
 from datetime import datetime
+from time import sleep
+from urllib.parse import quote_plus
 
 # 3rd party
 from django.conf import settings
@@ -220,18 +222,6 @@ def _search_category(search, category):
     search.save()
 
 
-def _set_next_cursor(search, category, cursor):
-    """Update search context to set next category and next cursor.
-
-    Arguments:
-    search -- a Search object that defines the parameters of the search
-    category -- a string; a scopus category abbreviation (e.g. 'CHEM')
-    cursor -- a Scopus search cursor
-    """
-    search.context.update({NEXT_CATEGORY: category, NEXT_CURSOR: cursor})
-    search.save()
-
-
 def _search_category_entries(search, category):
     """Perform Scopus search within subject area category; store result entries in the database.
 
@@ -247,10 +237,14 @@ def _search_category_entries(search, category):
     """
     page = 0
     page_cursor = ELSEVIER_FIRST_CURSOR
+    retry = True
 
     # If search of this category was previously interrupted, try to pick up where we left off
     if category == search.context[NEXT_CATEGORY] and search.context[NEXT_CURSOR]:
         page_cursor = search.context[NEXT_CURSOR]
+
+    # Log start
+    print(f"_search_category_entries(): INFO: {search.query}, {category}, cursor {page_cursor}")
 
     # Assemble query URL without pagination markers
     query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query=ABS("{search.query}") AND SUBJAREA({category}) AND DOCTYPE({DOCTYPES_QUERY})'
@@ -258,13 +252,8 @@ def _search_category_entries(search, category):
     #
     # -- Paginate through Scopus search results
     #
-    print(f"_search_category_entries(): INFO: {search.query}, {category}, cursor {page_cursor}")
 
     while True:
-        # Print status every 5 pages
-        if page % 5 == 0:
-            print(f"_search_category_entries(): INFO: {search.query}, {category}, page {page}")
-
         # Add pagination markers to query URL before performing GET request. Use cursor pagination to
         # "execute deep pagination searching," so as to not be cut off at 5000 results
         url = f'{query_url}&cursor={page_cursor}&count={ELSEVIER_PAGE_LIMIT}'
@@ -274,63 +263,57 @@ def _search_category_entries(search, category):
         except Exception as exc:
             print(f"_search_category_entries(): ERROR: {exc}, {url}, {response.headers}, {response.json()}")
 
-            # If we've exceeded our quota (429 TOO MANY REQUESTS), log the quota reset timestamp
+            # If we've exceeded our quota (429 TOO MANY REQUESTS), log reset timestamp before raising exception
             if response.status_code == 429:
                 quota_reset = response.headers.get('X-RateLimit-Reset')
                 if quota_reset:
-                    print(f"_search_category_entries(): ERROR: Quota will reset at {datetime.fromtimestamp(int(quota_reset))}")
+                    print(f"_search_category_entries(): INFO: Quota will reset at {datetime.fromtimestamp(int(quota_reset))}")
+                raise exc
 
-            # TODO: Decide if this is necessary
-            # # Reset category search and raise exception
-            # _set_next_cursor(search, category, ELSEVIER_FIRST_CURSOR)
+            # Otherwise, retry once before raising exception
+            if retry:
+                print(f"_search_category_issn(): INFO: Will retry in {RETRY_PAUSE} seconds")
+                sleep(RETRY_PAUSE)
+                retry = False
+                continue
+
             raise exc
 
         # Unpack successful response
         try:
             search_results = response.json()['search-results']
 
-            # After fetching first page, log total number of results
-            if page_cursor == ELSEVIER_FIRST_CURSOR:
-                totalResults = int(search_results['opensearch:totalResults'])
-                print(f"_search_category_entries(): INFO: {search.query}, {category}, {totalResults} results")
+            # Log status every 5 pages
+            if page % 5 == 0:
+                quota = response.headers.get('X-RateLimit-Remaining')
+                total = search_results.get('opensearch:totalResults')
+                print(f"_search_category_entries(): INFO: {search.query}, {category}, {total} results, page {page}, ({quota} HTTP request quota remaining)")
 
             # If there are no results for the requested page, end pagination
             entries = search_results.get('entry')
             if not entries:
-                print(f"_search_category_entries(): INFO: {search.query}, {category}, page {page}, no entries, done")
-                _set_next_cursor(search, None, None)
+                print(f"_search_category_entries(): INFO: {search.query}, {category}, page {page}, no entries, end pagination")
                 break
 
             # Check for any other errors
             if 'error' in entries[0]:
                 raise Exception({entries[0]['error']})
         except Exception as exc:
-            print(f"_search_category_entries(): ERROR: {exc}, {url}, {response.headers}, {response.json()}")
-            # TODO: Decide if this is necessary
-            # # Reset category search and raise exception
-            # _set_next_cursor(search, category, ELSEVIER_FIRST_CURSOR)
+            print(f"_search_category_entries(): ERROR: {exc}, {url}, {response.headers}, {response.json().keys()}")
             raise exc
 
         # Create an internal search result entry for each Scopus result entry
         for entry in entries:
             _create_search_result_entry(search, category, url, entry)
 
-        # Get next page cursor; increment page counter
+        # Get next page cursor; set next cursor on search object; increment page counter
         try:
-            page_cursor = search_results['cursor']['next'] # TODO: confirm data organization
+            page_cursor = quote_plus(search_results['cursor']['@next'])
+            search.set_next_cursor(category, page_cursor)
             page += 1
         except Exception as exc:
             print(f"_search_category_entries(): ERROR: {exc}, {url}, {response.headers}, {response.json()}")
             raise exc
-
-        # If the next page cursor is Truthy, set it on the search object; otherwise, end pagination
-        if page_cursor:
-            _set_next_cursor(search, category, page_cursor)
-        else:
-            # TODO: confirm if cursor will be Falsey at the end of pagination or if it will lead to an empty page
-            print(f"_search_category_entries(): INFO: {search.query}, {category}, page {page}, no cursor, done")
-            _set_next_cursor(search, None, None)
-            break
 
 
 def _create_search_result_entry(search, category, url, entry):
@@ -378,7 +361,7 @@ def _create_search_result_entry(search, category, url, entry):
                 title=entry['dc:title'],
                 first_author=creator,
                 document_type=subtype,
-                publication_name=entry['prism:publicationName'],
+                publication_name=entry.get('prism:publicationName'),
                 scopus_source=ScopusSource.objects.filter(source_id=entry['source-id']).first(),
             )
         except IntegrityError:
@@ -390,7 +373,4 @@ def _create_search_result_entry(search, category, url, entry):
 
     except Exception as exc:
         print(f"_create_search_result_entry(): ERROR: {exc}, {url}, {entry}")
-        # TODO: Decide if this is necessary
-        # # Reset category search and raise exception
-        # _set_next_cursor(search, category, ELSEVIER_FIRST_CURSOR)
         raise exc

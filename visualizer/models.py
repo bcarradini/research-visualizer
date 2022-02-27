@@ -87,6 +87,9 @@ class Search(TimeStampedModel):
         # Return initialize context
         return {CATEGORIES: categories, FINISHED_CATEGORIES: [], NEXT_CATEGORY: None, NEXT_CURSOR: None}
 
+    def set_next_cursor(self, category, cursor):
+        self.context.update({NEXT_CATEGORY: category, NEXT_CURSOR: cursor})
+        self.save()
 
 class SearchResult_Category(TimeStampedModel):
     # Executed search
@@ -125,7 +128,7 @@ class SearchResult_Entry(models.Model):
     document_type = models.CharField(max_length=2, blank=True, null=True)
 
     # Entry publication
-    publication_name = models.TextField()
+    publication_name = models.TextField(blank=True, null=True)
     scopus_source = models.ForeignKey(ScopusSource, blank=True, null=True, related_name='entries', on_delete=models.CASCADE)
 
     class Meta(object):
