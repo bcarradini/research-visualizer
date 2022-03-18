@@ -46,7 +46,7 @@
 
     <!-- Global JS Variables -->
     <script>
-        var debug = {% if DEBUG or ENVIRONMENT == "dev" %}true{% else %}false{% endif %}
+        var appDebug = {% if DEBUG or ENVIRONMENT == "dev" %}true{% else %}false{% endif %}
         var baseUrl = "{{ BASE_URL }}"
     </script>
 
