@@ -1,18 +1,19 @@
+"""
+Project app URLs
+"""
+# 3rd party
 from django.urls import path, include
-
 from django.contrib import admin
 
+# Auto-discover installed apps
 admin.autodiscover()
 
-from visualizer.views import abstract, index, search, subject_area_classifications
+from visualizer import urls as visualizer_urls
 
 
 # Learn more here: https://docs.djangoproject.com/en/2.1/topics/http/urls/
 urlpatterns = [
-    path('abstract/<int:scopus_id>', abstract, name='abstract'),
-    path('search', search, name='search'),
-    path('subject-area-classifications', subject_area_classifications, name='subject-area-classifications'),
-    path('', index, name='index'),
+    path(r'', include((visualizer_urls, 'ihs'), namespace='visualizer')),
     # TODO:
     # path('db/', visualizer.views.db, name='db'),
     # path('admin/', admin.site.urls),

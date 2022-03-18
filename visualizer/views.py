@@ -61,9 +61,9 @@ def subject_area_classifications(request):
     return JsonResponse({'categories': categories, 'classifications': classifications}, status=200)
 
 
-def index(request):
-    """Returned rendered index template."""
-    return render(request, "index.html", context={})
+def visualizer(request):
+    """Returned rendered visualizer template."""
+    return render(request, "visualizer.html", context={})
 
 
 #
