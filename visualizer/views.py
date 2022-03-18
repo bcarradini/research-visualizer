@@ -5,12 +5,18 @@ Views to support Visualizer URLs
 import json
 
 # 3rd party
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.shortcuts import render
+from django.views.decorators.http import require_GET
 
 # Internal
 from project.worker import queue_job
-from visualizer.models import Search
+from visualizer.models import (
+    Search,
+    CATEGORIES,
+    FINISHED_CATEGORIES,
+)
+
 from visualizer.scopus import get_abstract, get_search_results, get_subject_area_classifications
 
 
@@ -19,6 +25,7 @@ from visualizer.scopus import get_abstract, get_search_results, get_subject_area
 #
 
 
+@require_GET
 def abstract(request, scopus_id):
     """Get abstract for document identified by Scopus ID.
 
@@ -28,6 +35,39 @@ def abstract(request, scopus_id):
     """
     results = get_abstract(scopus_id)
     return JsonResponse({'results': results}, status=200)
+
+
+@require_GET
+def search_results(request, search_id=None):
+    """TODO: comments"""
+    response = {}
+    searches = Search.objects.filter(finished=True, deleted=False)
+
+    # TODO: comment
+    if search_id:
+        try:
+            search = searches.get(id=search_id)
+        except:
+            raise Http404(f"Search {search_id} not found")
+
+        response = {
+            'results': get_search_results(search.query, search_id=search.id)
+        }
+
+    # TODO: comment
+    else:
+        response = {
+            'results': [{
+                'id': search.id,
+                'query': search.query,
+                'categories': search.context[CATEGORIES],
+                'finished_categories': search.context[FINISHED_CATEGORIES],
+                'finished': search.finished,
+                'finished_at': search.categories.order_by('-modified').first().modified, # TODO: improve hack
+            } for search in searches.order_by('query', '-created')]
+        }
+
+    return JsonResponse(response, status=200)
 
 
 def search(request):

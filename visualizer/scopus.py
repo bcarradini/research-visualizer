@@ -123,10 +123,6 @@ def get_search_results(query, categories=None, search_id=None):
     for category in unfinished_categories:
         _search_category(search, category)
 
-    # Mark the search as finished
-    search.finished = True
-    search.save()
-
     # Assemble results from database for search
     results = {}
     for category in search_categories:

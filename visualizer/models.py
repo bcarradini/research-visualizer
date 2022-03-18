@@ -64,9 +64,24 @@ class Search(TimeStampedModel):
     # Executed search
     query = models.TextField()
     context = jsonb.JSONField(default=dict) # e.g. {'categories': ['MULT','AGRI','CHEM']}
-
-    # Queued job used to execute search
     finished = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False)
+
+    # TODO: comment
+
+    #
+    # -- Superclass methods
+    #
+
+    def save(self, *args, **kwargs):
+        # Set finished flag if the set of categories matches the set of finished categories
+        if set(self.context[CATEGORIES]) == set(self.context[FINISHED_CATEGORIES]):
+            self.finished = True
+        else:
+            self.finished = False
+
+        # Invoke superclass method
+        return super().save(*args, **kwargs)
 
     #
     # -- Custom methods
