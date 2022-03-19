@@ -1,6 +1,6 @@
 
 // 3rd party
-import { createApp } from 'vue'
+import { createApp, nextTick } from 'vue'
 import VNetworkGraph from 'v-network-graph'
 
 // Internal
@@ -25,6 +25,7 @@ const app = createApp({
             query: null,
             results: {},
             category: null,
+            classification: null,
             search: null,
             searches: null, // begin with null to distinguish from [], which indicates "no old searches"
             searchResults: null,
@@ -42,15 +43,25 @@ const app = createApp({
 
     created: function() {
         this.fetchOldSearchResults()
+        // // TEMP
+        // this.search = {
+        //     id: 43,
+        //     query: 'social media',
+        //     categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
+        //     finished: true,
+        //     finished_at: '2022-02-26T04:32:04.909Z',
+        //     finished_categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
+        // }
+        // // TEMP
     },
 
-    // mounted: function() {
-    //     window.addEventListener("beforeunload", this.beforeUnloadWarning)
-    // },
+    mounted: function() {
+        window.addEventListener("beforeunload", this.beforeUnloadWarning)
+    },
 
-    // destroyed: function() {
-    //     window.removeEventListener("beforeunload", this.beforeUnloadWarning)
-    // },
+    destroyed: function() {
+        window.removeEventListener("beforeunload", this.beforeUnloadWarning)
+    },
 
     // 
     // -- Computed properties
@@ -75,8 +86,13 @@ const app = createApp({
             return {
                 // Handle node click events
                 'node:click': (event) => {
+                    console.log('TEMP: node:click(): event =', event)
                     if (event.node != '') { // ignore events for hub node
-                        this.enterCategory(event.node)
+                        if (this.category) {
+                            this.enterClassification(event.node)
+                        } else {
+                            this.enterCategory(event.node)                            
+                        }
                     }
                 },
             }
@@ -124,23 +140,42 @@ const app = createApp({
             this.searchResults = null
         },
 
-        setupSpokeNodes() {
-            if (this.loadingSearchResults) return
-            // Clear out spoke nodes on instance
+        // Setup graph spoke nodes based on search results, which may be first-level results across
+        // all categories or second-level results across all classifications within a category
+        async setupSpokeNodes(category=null) {
+            // Identify results set
+            let results = category ? this.searchResults[category] : this.searchResults
+            if (_.isEmpty(results)) return
+ 
+            // Clear out spoke nodes on instance and wait for DOM to update; otherwise, the NetworkGraph child component
+            // will be updated instead of being unmounted/mounted, leading to rendering issues. 
             this.spokeNodes = []
-            // TODO: comment
+            await nextTick()
+ 
+            // Determine which nodes as the largest result count (for scaling node sizes)
+            let maxCount = Math.max(...Object.entries(results).map(([key, obj]) => {
+                // When viewing results for a specific category, select `count` from each object (i.e. classification);
+                // when viewing for all categories, select `total.count` for each object (i.e. category)
+                return category ? obj.count : obj.total.count
+            }))
+ 
+            // Assemble spoke nodes to visually represent search results
             let nodes = []
-            console.log('TEMP: setupSpokeNodes(): this.searchResults =', this.searchResults)
-            let maxCount = Math.max(...Object.entries(this.searchResults).map(([cat, catObj]) => catObj.total.count))
-            console.log('TEMP: setupSpokeNodes(): maxCount =', maxCount)
-            for (const [category, categoryObj] of Object.entries(this.searchResults)) {
+            for (const [key, obj] of Object.entries(results)) {
+                // Identify appropriate results count and nodeId based on whether we're viewing results for a specific
+                // category or for all categories
+                if (category && key == 'total') continue
+                let count = category ? obj.count : obj.total.count
+                let nodeId = category ? `${key}: ${obj.name}` : key
+                // Add node to list
                 nodes.push({ 
-                    name: `${categoryObj.total.count}`,
-                    nodeId: category,
-                    size: this.getNodeSize(categoryObj.total.count, maxCount),
-                    color: this.getNodeColor(category),
+                    name: `${count}`,
+                    nodeId: nodeId,
+                    size: this.getNodeSize(count, maxCount),
+                    color: this.getNodeColor(nodeId),
                 })
             }
+ 
             // Set spoke nodes on instance
             this.spokeNodes = nodes
         },
@@ -163,55 +198,35 @@ const app = createApp({
             return this.minNodeSize + (count/maxCount)*this.nodeSizeMultiplier
         },
 
-        // beforeUnloadWarning(event) {
-        //     event.preventDefault()
-        //     event.returnValue = "Are you sure you want to exit? Your work will be lost."
-        //     return event.returnValue
-        // },
+        beforeUnloadWarning(event) {
+            event.preventDefault()
+            event.returnValue = "Are you sure you want to exit the tool?"
+            return event.returnValue
+        },
 
-        // enterCategory(category) {
-        //     // Set category on instance
-        //     this.category = category
-        //     // Count results for category by classification
-        //     let classifications = {}
-        //     for (const e of this.searchResults[category].entries) {
-        //         for (const c of e.classifications) {
-        //             if (c.code in classifications) {
-        //                 classifications[c.code]['num_entries'] += 1
-        //             } else {
-        //                 classifications[c.code] = {
-        //                     name: c.name,
-        //                     num_entries: 1,
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     // Clear out spoke nodes on instance
-        //     this.spokeNodes = []
-        //     // Setup new nodes representing category breakdown
-        //     let nodes = []
-        //     let maxCount = 100 // TODO: get the real max size
-        //     for (const [classCode, classObj] of Object.entries(classifications)) {
-        //         console.log('TEMP: enterCategory(): classCode =', classCode)
-        //         console.log('TEMP: enterCategory(): classObj =', classObj)
-        //         nodes.push({ 
-        //             name: `${classObj.num_entries}`,
-        //             nodeId: classObj.code,
-        //             size: this.getNodeSize(classObj.num_entries, maxCount),
-        //             color: this.getNodeColor(classObj.name),
-        //         })
-        //     }
-        //     // Set spoke nodes on instance
-        //     this.spokeNodes = nodes
-        // },
+        enterCategory(category) {
+            // Set category on instance; setup spoke nodes to view intra-category results
+            this.category = category
+            this.setupSpokeNodes(category)
+        },
 
-        // exitCategory() {
-        //     // Clear category on instance
-        //     this.category = null
-        //     // Reset spoke nodes for first-level search
-        //     this.spokeNodes = this.previousSpokeNodes
-        //     this.previousSpokeNodes = []
-        // },
+        exitCategory() {
+            // Clear category on instance; setup spoke nodes to view inter-category results
+            this.category = null
+            this.setupSpokeNodes()
+        },
+
+        enterClassification(classification) {
+            // Set classification on instance; setup spoke nodes to view intra-classification results
+            this.classification = classification
+            // this.setupSpokeNodes(classification)
+        },
+
+        exitClassification() {
+            // Clear classification on instance; setup spoke nodes to view inter-classification results
+            this.classification = null
+            // this.setupSpokeNodes()
+        },
 
         // 
         // -- API fetches

@@ -40,12 +40,11 @@
 
         <!-- Second-level search results: single category -->
         <section v-if="category">
-            <a @click="exitCategory">${ lastSearch.query }</a> > ${ category }
+            <a @click="exitCategory">${ search.query }</a> > ${ category }
         </section>
 
         <!-- First-level search results: all categories -->
         <section id="visualization">
-            <!-- TODO: Figure out why reactivity isn't working so we don't have to rely on loadingNewResult -->
             <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="eventHandlers"></network-graph>
         </section>
 

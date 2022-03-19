@@ -44,7 +44,7 @@ const NetworkGraph = {
                 color: 'black',
                 nodeId: '',
             },
-            radius: 450,
+            radius: 400,
         }
     },
 
@@ -55,6 +55,27 @@ const NetworkGraph = {
     created: function() {
         console.log('TEMP: NetworkGraph.created(): ')
     },
+
+    mounted: function() {
+        console.log('TEMP: NetworkGraph.mounted(): ')
+    },
+
+    beforeUpdate: function() {
+        console.log('TEMP: NetworkGraph.beforeUpdate(): ')
+    },
+
+    updated: function() {
+        console.log('TEMP: NetworkGraph.updated(): ')
+    },
+
+    beforeUnmount: function() {
+        console.log('TEMP: NetworkGraph.beforeUnmount(): ')
+    },
+
+    unmounted: function() {
+        console.log('TEMP: NetworkGraph.unmounted(): ')
+    },
+
 
     //
     // -- Computed properties
@@ -103,14 +124,25 @@ const NetworkGraph = {
             let radians = 0
             for (let i = 0; i < this.spokeNodesCnt; i++) {
                 let nodeId = this.spokeNodes[i].nodeId
+                let altRadius = this.radius
+                if (i % 2 == 0) {
+                    altRadius = altRadius * 1.1 // TODO: adjust scale based on number of nodes
+                }
                 layout['nodes'][nodeId] = {
-                    x: this.radius * Math.cos(radians),
-                    y: this.radius * Math.sin(radians),
+                    x: altRadius * Math.cos(radians),
+                    y: altRadius * Math.sin(radians),
                 }
                 radians += this.spokeRadians
             }
             return layout
         },
+    },
+
+    // 
+    // -- Watchers
+    // 
+
+    watch: {
     },
 
     // 
