@@ -1,4 +1,4 @@
-<section>
+<section class="network-graph">
     <v-network-graph :nodes="nodes" :edges="edges" :layouts="layouts" :configs="configs" :event-handlers="eventHandlers">
     <template
       #override-node-label="{ nodeId, scale, text, x, y, config, textAnchor, dominantBaseline }"
@@ -10,17 +10,20 @@
         text-anchor="middle"
         dominant-baseline="central"
         fill="#ffffff"
-        >${ text }</text
       >
+        ${ text }
+      </text>
       <text
         :x="x"
         :y="y"
-        :font-size="config.fontSize * scale"
+        :font-size="14 * scale"
         :text-anchor="textAnchor"
         :dominant-baseline="dominantBaseline"
         :fill="config.color"
-        >${ nodeId }</text
+        style="max-width: 20px"
       >
+        ${ nodeId }
+      </text>
     </template>    
     </v-network-graph>
 </section>

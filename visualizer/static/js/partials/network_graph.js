@@ -122,15 +122,14 @@ const NetworkGraph = {
             }}
             // Add spoke nodes
             let radians = 0
+            // Define a variation scale from 1 to 3 based on the number of spoke nodes
+            let scale = Math.max(1, Math.min(3, Math.floor(this.spokeNodesCnt/10)))
             for (let i = 0; i < this.spokeNodesCnt; i++) {
                 let nodeId = this.spokeNodes[i].nodeId
-                let altRadius = this.radius
-                if (i % 2 == 0) {
-                    altRadius = altRadius * 1.1 // TODO: adjust scale based on number of nodes
-                }
+                let mult = 1 + ((i % scale) * 0.2) // scale radians cyclically to spread nodes out for easier reading
                 layout['nodes'][nodeId] = {
-                    x: altRadius * Math.cos(radians),
-                    y: altRadius * Math.sin(radians),
+                    x: (this.radius * mult) * Math.cos(radians),
+                    y: (this.radius * mult) * Math.sin(radians),
                 }
                 radians += this.spokeRadians
             }

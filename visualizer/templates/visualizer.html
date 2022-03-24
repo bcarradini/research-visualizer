@@ -1,14 +1,19 @@
 {% extends "base.html" %}
 {% load static %}
 
-<!-- TODO: comment -->
+<!-- Header block -->
 {% block header %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/v_network_graph_style.css' %}" />
 {% endblock %}
 
-<!-- TODO: comment -->
+<!-- Content block -->
 {% block content %}
-<section v-cloak id="vue-el-visualizer">
+<section v-cloak id="visualizer">
+
+    <!----------->
+    <!-- Setup -->
+    <!----------->
+
     <div v-if="loadingPage">
         Loading...
     </div>
@@ -32,21 +37,27 @@
         </div>
 
     </div>
+
+    <!-------------------->
+    <!-- Search results -->
+    <!-------------------->
+
     <div v-else-if="loadingSearchResults">
         Loading...
         <!-- TODO: Provide status for real-time search on the categories being searched, one by one -->
     </div>
     <div v-else>
 
-        <!-- Second-level search results: single category -->
-        <section v-if="category">
-            <a @click="exitCategory">${ search.query }</a> > ${ category }
-        </section>
-
-        <!-- First-level search results: all categories -->
-        <section id="visualization">
-            <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="eventHandlers"></network-graph>
-        </section>
+        <!-- Breadcrumbs -->
+        <div v-if="classification">
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ category }</a> > ${ classification }
+        </div>
+        <div v-else-if="category">
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > ${ category }
+        </div>
+        <div v-else>
+            <a @click="exitSearch">search</a> > ${ search.query }
+        </div>
 
         <!-- Errors -->
         <div v-if="errors.length > 0">
@@ -54,6 +65,24 @@
                 <div>${ error }</div>
             </div>
         </div>
+
+        <!-- Third-level search results: entries for classification -->
+        <div v-if="classification">
+            <div v-if="loadingClassificationEntries">
+                Loading...
+            </div>
+            <div v-else>
+                <div v-for="entry in classificationEntries">
+                    <div>${ entry }</div>
+                </div>
+            </div>
+        </div>
+
+        <template v-else>
+
+            <!-- First-level search results: all categories -->
+            <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="eventHandlers"></network-graph>
+        </template>
 
     </div>
 </section>

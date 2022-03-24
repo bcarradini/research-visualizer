@@ -26,6 +26,7 @@ const app = createApp({
             results: {},
             category: null,
             classification: null,
+            entries: {},
             search: null,
             searches: null, // begin with null to distinguish from [], which indicates "no old searches"
             searchResults: null,
@@ -77,8 +78,11 @@ const app = createApp({
         loadingSearchResults() {
             return this.searchResults == null
         },
-        searchResultsHighLevel() {
-
+        loadingClassificationEntries() {
+            return this.classification && this.entries[this.classification] ? false : true
+        },
+        classificationEntries() {
+            return (this.classification ? this.entries[this.classification] : null) || []
         },
         eventHandlers() {
             // Event handlers for network graph
@@ -89,7 +93,7 @@ const app = createApp({
                     console.log('TEMP: node:click(): event =', event)
                     if (event.node != '') { // ignore events for hub node
                         if (this.category) {
-                            this.enterClassification(event.node)
+                            this.enterClassification(event.node.split(':')[0])
                         } else {
                             this.enterCategory(event.node)                            
                         }
@@ -107,11 +111,13 @@ const app = createApp({
         search(newSearch, oldSearch) {
             console.log('TEMP: watch.search(): oldSearch =', oldSearch)
             console.log('TEMP: watch.search(): newSearch =', newSearch)
-            if (newSearch.query != (oldSearch && oldSearch.query) || newSearch.id != (oldSearch && oldSearch.id)) {
-                if (newSearch.id) {
-                    this.fetchOldSearchResults(newSearch.id)
-                } else {
-                    this.fetchNewSearchResults(newSearch.query) // for now, implicitly search all categories
+            if (newSearch) {
+                if (newSearch.query != (oldSearch && oldSearch.query) || newSearch.id != (oldSearch && oldSearch.id)) {
+                    if (newSearch.id) {
+                        this.fetchOldSearchResults(newSearch.id)
+                    } else {
+                        this.fetchNewSearchResults(newSearch.query) // for now, implicitly search all categories
+                    }
                 }
             }
         }
@@ -137,6 +143,9 @@ const app = createApp({
         resetSearchResults() {
             // TODO: comment
             this.errors = []
+            this.category = null
+            this.classification = null
+            this.entries = {}
             this.searchResults = null
         },
 
@@ -207,25 +216,34 @@ const app = createApp({
         enterCategory(category) {
             // Set category on instance; setup spoke nodes to view intra-category results
             this.category = category
+            this.classification = null
             this.setupSpokeNodes(category)
+        },
+
+        exitSearch() {
+            // Clear category on instance; setup spoke nodes to view inter-category results
+            this.search = null
+            this.resetSearchResults()
         },
 
         exitCategory() {
             // Clear category on instance; setup spoke nodes to view inter-category results
             this.category = null
+            this.classification = null
+            this.errors = []
             this.setupSpokeNodes()
         },
 
         enterClassification(classification) {
             // Set classification on instance; setup spoke nodes to view intra-classification results
             this.classification = classification
-            // this.setupSpokeNodes(classification)
+            this.fetchSearchEntries(this.search.id, classification)
         },
 
         exitClassification() {
             // Clear classification on instance; setup spoke nodes to view inter-classification results
             this.classification = null
-            // this.setupSpokeNodes()
+            this.errors = []
         },
 
         // 
@@ -245,7 +263,7 @@ const app = createApp({
                     this.searches = response.results
                 }
             } else {
-                this.errors.push(`Failed to retrieve search results`)
+                this.errors.push(`Failed to retrieve existing search results`)
             }
         },
 
@@ -259,9 +277,21 @@ const app = createApp({
                 this.searchresults = response.results
                 this.setupSpokeNodes()
             } else {
-                this.errors.push(`Failed to retrieve search results`)
+                this.errors.push(`Failed to retrieve new search results`)
             }
         },
+
+        async fetchSearchEntries(search_id, classification) {
+            // Fetch data
+            let data = {classification: classification}
+            // TODO: Handle pagination
+            let response = await internalGet(`/search-results/${search_id}/entries?classification=${classification}&limit=100&offset=0`)
+            if (response) {
+                this.entries[this.classification] = response.results
+            } else {
+                this.errors.push(`Failed to retrieve entries`)
+            }
+        }
 
         // async fetchSubjectAreaClassifications() {
         //     let response = await internalGet('/subject-area-classifications')
@@ -274,4 +304,4 @@ const app = createApp({
 })
 
 app.use(VNetworkGraph)
-app.mount('#vue-el-visualizer')
+app.mount('#visualizer')

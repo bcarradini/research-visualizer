@@ -1,7 +1,9 @@
-/* TODO: comment */
+/* 
+ * Base stylesheet for the visualizer app.
+ */
 
-/* TODO: comment */
-[v-cloak] { visibility: hidden; }
+/* Style v-cloak directive */
+[v-cloak] { display: none; }
 
 /* TODO: comment */
 .circle {
@@ -11,3 +13,14 @@
   border-radius: 50%;
   display: inline-block;
 }
+
+/* TODO: comment */
+/*.network-graph {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}*/
+/*.v-network-graph {
+    width: 1000px !important;
+}*/
