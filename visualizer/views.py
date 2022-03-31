@@ -5,6 +5,7 @@ Views to support Visualizer URLs
 import json
 
 # 3rd party
+from django.db.models import Count
 from django.http import JsonResponse, Http404
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
@@ -13,6 +14,7 @@ from django.views.decorators.http import require_GET, require_POST
 from project.worker import queue_job
 from visualizer.models import (
     ScopusClassification,
+    ScopusSource,
     Search,
     SearchResult_Entry,
     CATEGORIES,
@@ -90,32 +92,63 @@ def search_results(request, search_id=None):
 
 
 @require_GET
-def search_result_entries(request, search_id):
-    """Get entries
-
-    Arguments:
-    request -- an HttpRequest object
-    """
-    print(f"search_result_entries(): request.GET = {request.GET}")
+def search_result_sources(request, search_id):
+    """TODO: comments"""
+    print(f"TEMP: search_result_sources(): request.GET = {request.GET}")
     # Unpack query params
     code = request.GET.get('classification')
+
+    # Validate request
+    search = _get_search(search_id)
+    print(f"TEMP: search_result_sources(): search = {search}")
+    classification = _get_classification(code)
+    print(f"TEMP: search_result_sources(): classification = {classification}")
+
+    # TODO: comment
+    sources = ScopusSource.objects.filter(
+        classifications=classification,
+        entries__search=search,
+        entries__category_abbr=classification.category_abbr,
+    ).distinct().annotate(count=Count('entries')).values('source_id','source_name','count')
+
+    # TODO: comment
+    response = {
+        'results': [{
+            'id': source['source_id'], # TODO: This is confusing; source_id comes from Scopus; it's not our primary key
+            'name': source['source_name'],
+            'count': source['count'],
+        } for source in sources]
+    }
+
+    return JsonResponse(response, status=200)
+
+
+@require_GET
+def search_result_entries(request, search_id):
+    """TODO: comments"""
+    print(f"TEMP: search_result_entries(): request.GET = {request.GET}")
+    # Unpack query params
+    code = request.GET.get('classification')
+    source_id = request.GET.get('source')
     limit = int(request.GET.get('limit', MAX_LIMIT))
     offset = int(request.GET.get('offset', 0))
     assert limit <= MAX_LIMIT # TODO: be more graceful
 
     # Validate request
     search = _get_search(search_id)
-    print(f"search_result_entries(): search = {search}")
+    print(f"TEMP: search_result_entries(): search = {search}")
     classification = _get_classification(code)
-    print(f"search_result_entries(): classification = {classification}")
+    print(f"TEMP: search_result_entries(): classification = {classification}")
+    source = _get_source(source_id)
+    print(f"TEMP: search_result_entries(): source = {source}")
 
     # TODO: comment
     entries = SearchResult_Entry.objects.filter(
         search=search,
         category_abbr=classification.category_abbr,
-        scopus_source__classifications=classification,
+        scopus_source=source,
     )
-    print(f"search_result_entries(): entries.query = {entries.query}")
+    print(f"TEMP: search_result_entries(): entries.query = {entries.query}")
 
     # TODO: comment
     entries_page = entries.order_by('title')[offset:offset+limit]
@@ -176,5 +209,12 @@ def _get_classification(code):
     """TODO: comment"""
     try:
         return ScopusClassification.objects.get(code=code)
+    except:
+        raise Http404(f"Classification not found, {code}")
+
+def _get_source(source_id):
+    """TODO: comment"""
+    try:
+        return ScopusSource.objects.get(source_id=source_id)
     except:
         raise Http404(f"Classification not found, {code}")

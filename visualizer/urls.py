@@ -10,6 +10,7 @@ from visualizer.views import (
     search,
     search_results,
     search_result_entries,
+    search_result_sources,
     subject_area_classifications,
     visualizer,
 )
@@ -21,6 +22,7 @@ urlpatterns = [
     path('search', search, name='search'),
     path('search-results', search_results, name='search_results'),
     path('search-results/<int:search_id>', search_results, name='search_results'),
+    path('search-results/<int:search_id>/sources', search_result_sources, name='search_result_sources'),
     path('search-results/<int:search_id>/entries', search_result_entries, name='search_result_entries'),
     path('subject-area-classifications', subject_area_classifications, name='subject-area-classifications'),
     path('', visualizer, name='visualizer'),

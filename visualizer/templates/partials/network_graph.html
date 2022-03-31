@@ -17,10 +17,9 @@
         :x="x"
         :y="y"
         :font-size="14 * scale"
-        :text-anchor="textAnchor"
+        :text-anchor="getTextAnchor(nodeId)"
         :dominant-baseline="dominantBaseline"
-        :fill="config.color"
-        style="max-width: 20px"
+        fill="config.color"
       >
         ${ nodeId }
       </text>

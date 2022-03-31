@@ -46,13 +46,19 @@
         Loading...
         <!-- TODO: Provide status for real-time search on the categories being searched, one by one -->
     </div>
-    <div v-else>
 
+    <div v-else>
         <!-- Breadcrumbs -->
-        <div v-if="classification">
+        <div v-if="source">
+            <!-- TODO: Display category & classification name -->
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ category }</a> > <a @click="exitSource">${ classification }</a> > ${ source }
+        </div>
+        <div v-else-if="classification">
+            <!-- TODO: Display category & classification name -->
             <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ category }</a> > ${ classification }
         </div>
         <div v-else-if="category">
+            <!-- TODO: Display category name -->
             <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > ${ category }
         </div>
         <div v-else>
@@ -66,25 +72,53 @@
             </div>
         </div>
 
-        <!-- Third-level search results: entries for classification -->
-        <div v-if="classification">
-            <div v-if="loadingClassificationEntries">
-                Loading...
+        <!-- Fourth-level search results: entries for classification & source -->
+        <div v-if="source">
+            <!-- TODO: Turn this into a component? -->
+            <div>
+                <table>
+                    <tr>
+                        <td>Publication</td>
+                        <td>Document Type</td>
+                        <td>Title</td>
+                        <td>First Author</td>
+                    </tr>
+                    <tr v-for="entry in classificationEntries" :key="entry.scopus_id" @click="enterEntry(entry)">
+                        <td>
+                            ${entry.publication_name}
+                        </td>
+                        <td>
+                            <!-- TODO: Translate to human-readable -->
+                            ${entry.document_type}
+                        </td>
+                        <td>
+                            ${entry.title}
+                        </td>
+                        <td>
+                            ${entry.first_author}
+                        </td>
+                    </tr>
+                </table>
             </div>
-            <div v-else>
-                <div v-for="entry in classificationEntries">
-                    <div>${ entry }</div>
+            <!-- TODO: Turn this into a component? -->
+            <section v-if="entry">
+                <div style="position:absolute; top: 100px; left: 100px; z-index=2000; background-color: red;">
+                    ${ entry.abstract }
+                    <div @click="exitEntry">
+                        X
+                    </div>
                 </div>
-            </div>
+            </section>
         </div>
 
+        <!-- First-level search results: all categories -->
+        <!-- Second-level search results: classifications for category -->
+        <!-- Third-level search results: sources for classification -->
         <template v-else>
-
-            <!-- First-level search results: all categories -->
             <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="eventHandlers"></network-graph>
         </template>
-
     </div>
+
 </section>
 {% endblock %}
 
