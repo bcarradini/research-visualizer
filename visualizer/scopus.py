@@ -140,7 +140,7 @@ def get_subject_area_classifications():
 
     Ref: https://dev.elsevier.com/documentation/SubjectClassificationsAPI.wadl
     """
-    categories, classifications = [], []
+    categories, classifications = {}, {}
 
     # Request Scopus subject area classifications
     url = f"{ELSEVIER_BASE_URL}/content/subject/scopus"
@@ -157,13 +157,17 @@ def get_subject_area_classifications():
         #     "description":"Agricultural and Biological Sciences",
         #     "detail":"Agricultural and Biological Sciences (miscellaneous)"
         # }
-        classifications.append(classification)
         category = classification['abbrev']
+        classifications[classification['code']] = {
+            'code': classification['code'],
+            'name': classification['detail'],
+            'category': category,
+        }
         if category not in categories:
-            categories.append(category)
-
-    # Sore categories alphabetically
-    categories = sorted(categories)
+            categories[category] = {
+                'abbr': category,
+                'name': classification['description'],
+            }
 
     return (categories, classifications)
 
