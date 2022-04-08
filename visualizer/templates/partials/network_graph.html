@@ -1,28 +1,28 @@
 <section class="network-graph">
     <v-network-graph :nodes="nodes" :edges="edges" :layouts="layouts" :configs="configs" :event-handlers="eventHandlers">
-    <template
-      #override-node-label="{ nodeId, scale, text, x, y, config, textAnchor, dominantBaseline }"
-    >
-      <text
-        x="0"
-        y="0"
-        :font-size="14 * scale"
-        text-anchor="middle"
-        dominant-baseline="central"
-        fill="#ffffff"
+      <template
+        #override-node-label="{ nodeId, scale, text, x, y, config, textAnchor, dominantBaseline }"
       >
-        ${ text }
-      </text>
-      <text
-        :x="x"
-        :y="y"
-        :font-size="14 * scale"
-        :text-anchor="getTextAnchor(nodeId)"
-        :dominant-baseline="dominantBaseline"
-        fill="config.color"
-      >
-        ${ nodeId }
-      </text>
-    </template>    
+        <text
+          x="0"
+          y="0"
+          :font-size="14 * scale"
+          text-anchor="middle"
+          dominant-baseline="central"
+          fill="#ffffff"
+        >
+          ${ text }
+        </text>
+        <text
+          :x="x"
+          :y="y"
+          :font-size="14 * scale"
+          :text-anchor="getTextAnchor(nodeId)"
+          :dominant-baseline="dominantBaseline"
+          fill="config.color"
+        >
+          ${ nodeId }
+        </text>
+      </template>    
     </v-network-graph>
 </section>

@@ -1,7 +1,4 @@
 
-// 3rd party
-import { reactive } from 'vue'
-
 // Internal
 import htmlTemplate from "~/visualizer/templates/partials/network_graph.html"
 
