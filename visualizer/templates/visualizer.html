@@ -111,9 +111,13 @@
             </section>
         </div>
 
+        <!-- Third-level search results: sources for classification -->
+        <div v-else-if="classification">
+            <bar-chart v-if="!isEmpty(chartData)" :chart-data="chartData"></bar-chart>
+        </div>
+
         <!-- First-level search results: all categories -->
         <!-- Second-level search results: classifications for category -->
-        <!-- Third-level search results: sources for classification -->
         <template v-else>
             <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="eventHandlers"></network-graph>
         </template>

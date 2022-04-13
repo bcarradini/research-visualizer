@@ -53,26 +53,6 @@ const NetworkGraph = {
         console.log('TEMP: NetworkGraph.created(): ')
     },
 
-    mounted: function() {
-        console.log('TEMP: NetworkGraph.mounted(): ')
-    },
-
-    beforeUpdate: function() {
-        console.log('TEMP: NetworkGraph.beforeUpdate(): ')
-    },
-
-    updated: function() {
-        console.log('TEMP: NetworkGraph.updated(): ')
-    },
-
-    beforeUnmount: function() {
-        console.log('TEMP: NetworkGraph.beforeUnmount(): ')
-    },
-
-    unmounted: function() {
-        console.log('TEMP: NetworkGraph.unmounted(): ')
-    },
-
 
     //
     // -- Computed properties

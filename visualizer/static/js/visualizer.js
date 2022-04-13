@@ -6,11 +6,13 @@ import VNetworkGraph from 'v-network-graph'
 // Internal
 import {internalGet, internalPost} from './api'
 import NetworkGraph from './partials/network_graph'
+import BarChart from './partials/bar_chart'
 
 const app = createApp({
     delimiters: ['${', '}'],
     components: {
         'network-graph': NetworkGraph,
+        'bar-chart': BarChart,
     },
 
     //
@@ -21,6 +23,7 @@ const app = createApp({
         return {
             category: null,
             categories: {},
+            chartData: {},
             classification: null,
             classifications: {},
             entry: null,
@@ -50,16 +53,16 @@ const app = createApp({
     created: function() {
         this.fetchOldSearchResults()
         this.fetchSubjectAreaClassifications()
-        // // TEMP
-        // this.search = {
-        //     id: 43,
-        //     query: 'social media',
-        //     categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
-        //     finished: true,
-        //     finished_at: '2022-02-26T04:32:04.909Z',
-        //     finished_categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
-        // }
-        // // TEMP
+        // TEMP
+        this.search = {
+            id: 43,
+            query: 'social media',
+            categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
+            finished: true,
+            finished_at: '2022-02-26T04:32:04.909Z',
+            finished_categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
+        }
+        // TEMP
     },
 
     mounted: function() {
@@ -154,23 +157,34 @@ const app = createApp({
             this.searchResults = null
         },
 
+        getLabelColor(str) {
+            // Ref: https://stackoverflow.com/a/16348977/9871562
+            let hash = 0
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash)
+            }
+            let color = '#'
+            for (let i = 0; i < 3; i++) {
+                let value = (hash >> (i * 8)) & 0xFF
+                color += ('00' + value.toString(16)).substr(-2)
+            }
+            return color
+        },
+
         // 
-        // -- Graph nodes
+        // -- Network graph nodes
         // 
 
         // Setup graph spoke nodes based on search results, which may be first-level results across
         // all categories or second-level results across all classifications within a category
         async setupSpokeNodes(category=null, classification=null) {
-            console.log('TEMP: setupSpokeNodes(): category =', category)
-            console.log('TEMP: setupSpokeNodes(): classification =', classification)
             // Identify results set
-            let results = this.searchResults
+            let results = this.searchResults || {}
             if (category) {
-                results = this.searchResults[category]
+                results = this.searchResults[category] || {}
             } else if (classification) {
-                results = this.searchResultSources[classification]
+                results = this.searchResultSources[classification] || {}
             }
-            console.log('TEMP: setupSpokeNodes(): results =', results)
             if (_.isEmpty(results)) return
  
             // Clear out spoke nodes on instance and wait for DOM to update; otherwise, the NetworkGraph child component
@@ -200,7 +214,7 @@ const app = createApp({
                     nodeId: label, // displayed on the graph
                     vizId: vizId, // what we need when processing click events
                     size: this.getNodeSize(count, maxCount),
-                    color: this.getNodeColor(label),
+                    color: this.getLabelColor(label),
                 })
             }
  
@@ -208,22 +222,49 @@ const app = createApp({
             this.spokeNodes = nodes
         },
 
-        getNodeColor(str) {
-            // Ref: https://stackoverflow.com/a/16348977/9871562
-            var hash = 0
-            for (var i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash)
-            }
-            var color = '#'
-            for (var i = 0; i < 3; i++) {
-                var value = (hash >> (i * 8)) & 0xFF
-                color += ('00' + value.toString(16)).substr(-2)
-            }
-            return color
-        },
-
         getNodeSize(count, maxCount) {
             return this.minNodeSize + (count/maxCount)*this.nodeSizeMultiplier
+        },
+
+        //
+        // -- Bar chart data
+        //
+
+        async setupChartData(classification) {
+            // Identify results set
+            let results = {}
+            if (classification) {
+                results = this.searchResultSources[classification] || {}
+            }
+            if (_.isEmpty(results)) return
+
+            // Clear out chart data on instance and wait for DOM to update
+            this.chartData = {}
+            await nextTick()
+
+            // Prepare chart data
+            let vizIds = []
+            let labels = []
+            let counts = []
+            let colors = []
+            for (let result of results) {
+                vizIds.push(result.id)
+                labels.push(result.name)
+                counts.push(result.count)
+                colors.push(this.getLabelColor(result.name))
+            }
+
+            // Set chart data on instance
+            this.chartData = {
+                labels: labels,
+                datasets: [
+                    {
+                        vizIds: vizIds,
+                        data: counts,
+                        backgroundColor: colors,
+                    },
+                ],
+            }
         },
 
         // 
@@ -262,9 +303,7 @@ const app = createApp({
             // Set classification on instance; setup spoke nodes to view intra-classification results
             this.classification = classification
             await this.fetchSearchSources(this.search.id, classification)
-            if (this.searchResultSources[classification] !== undefined) {
-                this.setupSpokeNodes(null, classification)
-            }
+            this.setupChartData(this.classification)
         },
 
         exitClassification() {
@@ -321,6 +360,10 @@ const app = createApp({
                 if (search_id) {
                     this.searchResults = response.results
                     this.setupSpokeNodes()
+                    // TEMP
+                    this.enterCategory('SOCI')
+                    this.enterClassification(3315)
+                    //  TEMP
                 } else {
                     this.searches = response.results
                 }
