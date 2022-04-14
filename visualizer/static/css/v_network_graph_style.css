@@ -1,1 +1,114 @@
-[data-v-20ea340e]:where(.v-shape-circle){pointer-events:none;transition:fill .1s linear,stroke .1s linear,stroke-width .1s linear,r .1s linear}[data-v-20ea340e]:where(.v-shape-rect){pointer-events:none;transition:fill .1s linear,stroke .1s linear,stroke-width .1s linear,x .1s linear,y .1s linear,width .1s linear,height .1s linear}.v-node[data-v-20ea340e] .draggable,.v-node[data-v-20ea340e] .selectable{pointer-events:all;cursor:pointer}.v-node[data-v-20ea340e] .v-text{pointer-events:none;user-select:none;cursor:default}.v-node[data-v-20ea340e] :where(.v-text){transition:x .1s linear,y .1s linear}.v-node-focus-ring[data-v-4f2bee14]{pointer-events:none}[data-v-4f2bee14]:where(.v-shape-circle){transition:r .1s linear}[data-v-4f2bee14]:where(.v-shape-rect){transition:x .1s linear,y .1s linear,width .1s linear,height .1s linear}[data-v-4f2bee14]:where(.dragging .v-shape-circleg),[data-v-4f2bee14]:where(.dragging .v-shape-rect){transition:none}.v-line.animate[data-v-1809a5d0]{--animation-speed: 100;animation:dash-1809a5d0 10s linear infinite;stroke-dashoffset:var(--animation-speed)}@keyframes dash-1809a5d0{to{stroke-dashoffset:0}}.v-line.animate[data-v-1fa4fd0c]{--animation-speed: 100;animation:dash-1fa4fd0c 10s linear infinite;stroke-dashoffset:var(--animation-speed)}@keyframes dash-1fa4fd0c{to{stroke-dashoffset:0}}[data-v-f407a16e]:where(.v-line){transition:stroke .1s linear,stroke-width .1s linear;pointer-events:none}.v-line-summarized.selectable[data-v-3b805f24]{cursor:pointer}.v-line-background.selectable[data-v-1b4a2a82]{cursor:pointer}.v-edge-labels[data-v-15f17dbf] .v-text,.v-edge-labels[data-v-15f17dbf] .v-text-background{pointer-events:none}.v-background-grid{pointer-events:none}.v-path-line.animate[data-v-d5817f5c]{--animation-speed: 100;animation:dash-d5817f5c 10s linear infinite;stroke-dashoffset:var(--animation-speed)}@keyframes dash-d5817f5c{to{stroke-dashoffset:0}}.v-path-line[data-v-7191e492]{pointer-events:none}.v-path-line.clickable[data-v-7191e492]{pointer-events:all;cursor:pointer}.v-network-graph[data-v-6d2dd7e2]{padding:0;position:relative;width:100%;height:100%;user-select:none}.v-canvas[data-v-6d2dd7e2]{width:100%;height:100%;opacity:0;transition:opacity .5s linear}.v-canvas.show[data-v-6d2dd7e2]{opacity:1}.v-canvas.dragging[data-v-6d2dd7e2] *{cursor:grabbing!important}.v-canvas.dragging[data-v-6d2dd7e2] .v-line{transition:d 0s}
+/*
+ * Pulled out from /node_modules/v-network-graph/lib/styles.css
+ */
+
+[data-v-20ea340e]:where(.v-shape-circle) {
+    pointer-events: none;
+    transition: fill 0.1s linear, stroke 0.1s linear, stroke-width 0.1s linear, r 0.1s linear;
+}
+[data-v-20ea340e]:where(.v-shape-rect) {
+    pointer-events: none;
+    transition: fill 0.1s linear, stroke 0.1s linear, stroke-width 0.1s linear, x 0.1s linear, y 0.1s linear, width 0.1s linear, height 0.1s linear;
+}
+.v-node[data-v-20ea340e] .draggable,
+.v-node[data-v-20ea340e] .selectable {
+    pointer-events: all;
+    cursor: pointer;
+}
+.v-node[data-v-20ea340e] .v-text {
+    pointer-events: none;
+    user-select: none;
+    cursor: default;
+}
+.v-node[data-v-20ea340e] :where(.v-text) {
+    transition: x 0.1s linear, y 0.1s linear;
+}
+.v-node-focus-ring[data-v-4f2bee14] {
+    pointer-events: none;
+}
+[data-v-4f2bee14]:where(.v-shape-circle) {
+    transition: r 0.1s linear;
+}
+[data-v-4f2bee14]:where(.v-shape-rect) {
+    transition: x 0.1s linear, y 0.1s linear, width 0.1s linear, height 0.1s linear;
+}
+[data-v-4f2bee14]:where(.dragging .v-shape-circleg),
+[data-v-4f2bee14]:where(.dragging .v-shape-rect) {
+    transition: none;
+}
+.v-line.animate[data-v-1809a5d0] {
+    --animation-speed: 100;
+    animation: dash-1809a5d0 10s linear infinite;
+    stroke-dashoffset: var(--animation-speed);
+}
+@keyframes dash-1809a5d0 {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+.v-line.animate[data-v-1fa4fd0c] {
+    --animation-speed: 100;
+    animation: dash-1fa4fd0c 10s linear infinite;
+    stroke-dashoffset: var(--animation-speed);
+}
+@keyframes dash-1fa4fd0c {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+[data-v-f407a16e]:where(.v-line) {
+    transition: stroke 0.1s linear, stroke-width 0.1s linear;
+    pointer-events: none;
+}
+.v-line-summarized.selectable[data-v-3b805f24] {
+    cursor: pointer;
+}
+.v-line-background.selectable[data-v-1b4a2a82] {
+    cursor: pointer;
+}
+.v-edge-labels[data-v-15f17dbf] .v-text,
+.v-edge-labels[data-v-15f17dbf] .v-text-background {
+    pointer-events: none;
+}
+.v-background-grid {
+    pointer-events: none;
+}
+.v-path-line.animate[data-v-d5817f5c] {
+    --animation-speed: 100;
+    animation: dash-d5817f5c 10s linear infinite;
+    stroke-dashoffset: var(--animation-speed);
+}
+@keyframes dash-d5817f5c {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+.v-path-line[data-v-7191e492] {
+    pointer-events: none;
+}
+.v-path-line.clickable[data-v-7191e492] {
+    pointer-events: all;
+    cursor: pointer;
+}
+.v-network-graph[data-v-6d2dd7e2] {
+    padding: 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+}
+.v-canvas[data-v-6d2dd7e2] {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.5s linear;
+}
+.v-canvas.show[data-v-6d2dd7e2] {
+    opacity: 1;
+}
+.v-canvas.dragging[data-v-6d2dd7e2] * {
+    cursor: grabbing !important;
+}
+.v-canvas.dragging[data-v-6d2dd7e2] .v-line {
+    transition: d 0s;
+}

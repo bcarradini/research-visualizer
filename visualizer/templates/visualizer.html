@@ -35,7 +35,13 @@
                 <a @click.prevent="selectSearch(search)">${ search.query }, ${ search.categories }, ${ search.finished_at }</a>
             </div>
         </div>
-
+<!-- TEMP -->
+<!--         <div class="posFixed | fbColCtrCtr | bgMask" style="z-index: 20000">
+            <div class="posRel | bgLight" style="width: 100%; max-width: 640px; max-height: 100%;">
+                Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit 
+            </div>
+        </div>
+ --><!-- TEMP -->
     </div>
 
     <!-------------------->
@@ -50,16 +56,13 @@
     <div v-else>
         <!-- Breadcrumbs -->
         <div v-if="source">
-            <!-- TODO: Display category & classification name -->
-            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ category }</a> > <a @click="exitSource">${ classification }</a> > ${ source }
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ categoryName(category) }</a> > <a @click="exitSource">${ classificationName(classification) }</a> > ${ sourceName(source) }
         </div>
         <div v-else-if="classification">
-            <!-- TODO: Display category & classification name -->
-            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ category }</a> > ${ classification }
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ categoryName(category) }</a> > ${ classificationName(classification) }
         </div>
         <div v-else-if="category">
-            <!-- TODO: Display category name -->
-            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > ${ category }
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > ${ categoryName(category) }
         </div>
         <div v-else>
             <a @click="exitSearch">search</a> > ${ search.query }
@@ -74,19 +77,15 @@
 
         <!-- Fourth-level search results: entries for classification & source -->
         <div v-if="source">
-            <!-- TODO: Turn this into a component? -->
+            <!-- TODO: Turn this into a component -->
             <div>
                 <table>
                     <tr>
-                        <td>Publication</td>
                         <td>Document Type</td>
                         <td>Title</td>
                         <td>First Author</td>
                     </tr>
                     <tr v-for="entry in classificationEntries" :key="entry.scopus_id" @click="enterEntry(entry)">
-                        <td>
-                            ${entry.publication_name}
-                        </td>
                         <td>
                             <!-- TODO: Translate to human-readable -->
                             ${entry.document_type}
@@ -99,27 +98,48 @@
                         </td>
                     </tr>
                 </table>
+                <div v-if="moreEntries" @click="fetchMoreSearchEntries">Load more entries</div>
             </div>
-            <!-- TODO: Turn this into a component? -->
-            <section v-if="entry">
-                <div style="position:absolute; top: 100px; left: 100px; z-index=2000; background-color: red;">
-                    ${ entry.abstract }
+            <!-- Entry modal -->
+            <div v-if="entry" class="posFixed | fbColCtrCtr | bgMask" style="z-index: 20000">
+                <div class="posRel | bgMid" style="width: 100%; max-width: 640px; max-height: 100%;">
                     <div @click="exitEntry">
                         X
                     </div>
+                    <div>
+                        ${ entry.publication_name }
+                    </div>
+                    <div>
+                        ${ entry.title }
+                    </div>
+                    <div>
+                        ${ entry.first_author }
+                    </div>
+                    <div>
+                        ${ entry.document_type }
+                    </div>
+                    <div>
+                        DOI: ${ entry.doi }
+                    </div>
+                    <div>
+                        Scopus ID: ${ entry.scopus_id }
+                    </div>
+                    <div>
+                        ${ entry.abstract }
+                    </div>
                 </div>
-            </section>
+            </div>
         </div>
 
         <!-- Third-level search results: sources for classification -->
         <div v-else-if="classification">
-            <bar-chart v-if="!isEmpty(chartData)" :chart-data="chartData"></bar-chart>
+            <bar-chart v-if="!isEmpty(chartData)" :chart-data="chartData" @chart-click="enterSource"></bar-chart>
         </div>
 
-        <!-- First-level search results: all categories -->
+        <!-- First-level search results: categories for search query -->
         <!-- Second-level search results: classifications for category -->
         <template v-else>
-            <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="eventHandlers"></network-graph>
+            <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="networkGraphEventHandlers"></network-graph>
         </template>
     </div>
 

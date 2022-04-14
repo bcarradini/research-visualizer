@@ -1,18 +1,71 @@
-/* 
+/*
  * Base stylesheet for the visualizer app.
  */
 
-/* Style v-cloak directive */
-[v-cloak] { display: none; }
-
-/* TODO: comment */
-.circle {
-  height: 25px;
-  width: 25px;
-  background-color: #bbb;
-  border-radius: 50%;
-  display: inline-block;
+/* v-cloak directive */
+[v-cloak] {
+  display: none;
 }
+
+/* Colors */
+/*
+$white: #ffffff;
+$lightGray: #f5f5f5;
+$midGray: #e0e0e0;
+$darkGray: #333333;
+*/
+
+/* Position */
+.posFixed {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow-y: scroll;
+}
+.posRel {
+  position: relative;
+}
+
+/* Background */
+.bgMask {
+  background-color: rgba(245, 245, 245, 0.5);
+}
+.bgLight {
+  background-color: #f5f5f5;
+}
+.bgMid {
+  background-color: #e0e0e0;
+}
+
+/* Flexbox */
+.fbColCtrCtr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* TODO: Sass preprocessor
+.fbRow {
+  @extend .fbox;
+  flex-direction: row;
+}
+.fbCol {
+  @extend .fbox;
+  flex-direction: column;
+}
+.fbColCtr {
+  @extend .fbCol;
+  align-items: center;
+}
+.fbColCtrCtr {
+  @extend .fbColCtr;
+  justify-content: center;
+}
+
+*/
 
 /* TODO: comment */
 /*.network-graph {
@@ -23,4 +76,4 @@
 }*/
 /*.v-network-graph {
     width: 1000px !important;
-}*/
+}

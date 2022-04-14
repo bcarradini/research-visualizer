@@ -8,6 +8,9 @@ import {internalGet, internalPost} from './api'
 import NetworkGraph from './partials/network_graph'
 import BarChart from './partials/bar_chart'
 
+// Constants
+const LIMIT = 100
+
 const app = createApp({
     delimiters: ['${', '}'],
     components: {
@@ -25,10 +28,9 @@ const app = createApp({
             categories: {},
             chartData: {},
             classification: null,
-            classifications: {},
             entry: null,
-            entryAbstract: null,
             entries: {},
+            entriesOffset: 0,
             errors: [],
             minNodeSize: 16,
             nodeSizeMultiplier: 40,
@@ -53,16 +55,16 @@ const app = createApp({
     created: function() {
         this.fetchOldSearchResults()
         this.fetchSubjectAreaClassifications()
-        // TEMP
-        this.search = {
-            id: 43,
-            query: 'social media',
-            categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
-            finished: true,
-            finished_at: '2022-02-26T04:32:04.909Z',
-            finished_categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
-        }
-        // TEMP
+        // // TEMP
+        // this.search = {
+        //     id: 43,
+        //     query: 'social media',
+        //     categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
+        //     finished: true,
+        //     finished_at: '2022-02-26T04:32:04.909Z',
+        //     finished_categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
+        // }
+        // // TEMP
     },
 
     mounted: function() {
@@ -90,22 +92,21 @@ const app = createApp({
         classificationEntries() {
             return (this.classification ? this.entries[this.classification] : null) || []
         },
-        eventHandlers() {
+        moreEntries() {
+            return this.entries[this.classification] ? this.entriesCount > this.entries[this.classification].length : false
+        },
+        networkGraphEventHandlers() {
             // Event handlers for network graph
             // Ref: https://dash14.github.io/v-network-graph/reference.html#eventhandlers
             return {
                 // Handle node click events
                 'node:click': (event) => {
-                    console.log('TEMP: event.node =', event.node)
                     // If node is not the hub node (''), process click event
                     if (event.node != '') {
                         let node = this.spokeNodes.find(n => n.nodeId == event.node)
-                        console.log('TEMP: node =', node)
-                        if (this.classification) {
-                            this.enterSource(node.vizId)
-                        } else if (this.category) {
+                        if (this.category) {
                             this.enterClassification(node.vizId) // vizId will be the classification code
-                        } else {
+                        } else if (this.search) {
                             this.enterCategory(node.vizId) // node.vizId will be the category abbreviation
                         }
                     }
@@ -150,11 +151,12 @@ const app = createApp({
         },
 
         resetSearchResults() {
-            this.errors = []
+            this.searchResults = null
             this.category = null
             this.classification = null
             this.entries = {}
-            this.searchResults = null
+            this.entry = null
+            this.errors = []
         },
 
         getLabelColor(str) {
@@ -171,19 +173,36 @@ const app = createApp({
             return color
         },
 
+        categoryName(category) {
+            return this.categories[category] ? this.categories[category].name : category
+        },
+
+        classificationName(classification) {
+            if (this.searchResults[this.category] && this.searchResults[this.category][classification]) {
+                return this.searchResults[this.category][classification].name
+            }
+            return classification
+        },
+
+        sourceName(sourceId) {
+            if (this.searchResultSources[this.classification]) {
+                let source = this.searchResultSources[this.classification].find(s => s.id == sourceId)
+                return source ? source.name : sourceId
+            }
+            return sourceId
+        },
+
         // 
         // -- Network graph nodes
         // 
 
         // Setup graph spoke nodes based on search results, which may be first-level results across
         // all categories or second-level results across all classifications within a category
-        async setupSpokeNodes(category=null, classification=null) {
+        async setupSpokeNodes(category=null) {
             // Identify results set
             let results = this.searchResults || {}
             if (category) {
                 results = this.searchResults[category] || {}
-            } else if (classification) {
-                results = this.searchResultSources[classification] || {}
             }
             if (_.isEmpty(results)) return
  
@@ -196,7 +215,7 @@ const app = createApp({
             let maxCount = Math.max(...Object.entries(results).map(([key, obj]) => {
                 // When viewing results for a specific category, select `count` from each object (i.e. classification);
                 // when viewing for all categories, select `total.count` for each object (i.e. category)
-                return (category || classification) ? obj.count : obj.total.count
+                return category ? obj.count : obj.total.count
             }))
  
             // Assemble spoke nodes to visually represent search results
@@ -205,14 +224,14 @@ const app = createApp({
                 // Identify appropriate results count and nodeId based on whether we're viewing results for a specific
                 // classification, a specific category, or for all categories
                 if (category && key == 'total') continue
-                let count = (category || classification) ? obj.count : obj.total.count
-                let label = (category || classification) ? obj.name : this.categories[key].name
-                let vizId = classification ? obj.id : key
+                let count = category ? obj.count : obj.total.count
+                let label = category ? obj.name : this.categories[key].name
+                let vizId = key
                 // Add node to list
                 nodes.push({ 
                     name: `${count}`, // displayed on the graph
                     nodeId: label, // displayed on the graph
-                    vizId: vizId, // what we need when processing click events
+                    vizId: vizId, // needed to process click events
                     size: this.getNodeSize(count, maxCount),
                     color: this.getLabelColor(label),
                 })
@@ -294,6 +313,7 @@ const app = createApp({
             this.category = null
             this.classification = null
             this.source = null
+            this.entries = {}
             this.entry = null
             this.errors = []
             this.setupSpokeNodes()
@@ -310,6 +330,7 @@ const app = createApp({
             // Clear classification on instance; setup spoke nodes to view inter-classification results
             this.classification = null
             this.source = null
+            this.entries = {}
             this.entry = null
             this.errors = []
             this.setupSpokeNodes(this.category)
@@ -317,26 +338,26 @@ const app = createApp({
 
         enterSource(source) {
             this.source = source
-            this.fetchSearchEntries(this.search.id, this.classification, source)
+            this.fetchSearchEntries(this.search.id, this.classification, source, true)
         },
 
         exitSource(source) {
             this.source = null
+            this.entries = {}
             this.entry = null
             this.errors = []
-            this.setupSpokeNodes(null, this.classification)
+            this.setupChartData(this.classification)
         },
 
-        enterEntry(entry) {
+        async enterEntry(entry) {
+            entry.abstract = null
             this.entry = entry
-            this.entry.abstract = 'Blah blah blah blah blah'
-            // this.fetchAbstract(this.entry.scopus_id)
+            this.entry.abstract = await this.fetchAbstract(this.entry.scopus_id)
         },
 
         exitEntry() {
             this.entry = null
             this.errors = []
-            this.setupSpokeNodes(null, this.classification)
         },
 
         // 
@@ -347,23 +368,23 @@ const app = createApp({
             let response = await internalGet('/subject-area-classifications')
             if (response) {
                 this.categories = response.categories
-                // this.classifications = response.classifications
             }
         },
 
-        async fetchOldSearchResults(search_id=null) {
+        async fetchOldSearchResults(searchId=null) {
             // Reset state of search results (if we're fetching a specific set of search results)
-            if (search_id) this.resetSearchResults()
+            if (searchId) this.resetSearchResults()
             // Fetch data
-            let response = await internalGet('/search-results' + (search_id ? `/${search_id}` : ''))
+            let response = await internalGet('/search-results' + (searchId ? `/${searchId}` : ''))
             if (response) {
-                if (search_id) {
+                if (searchId) {
                     this.searchResults = response.results
                     this.setupSpokeNodes()
-                    // TEMP
-                    this.enterCategory('SOCI')
-                    this.enterClassification(3315)
-                    //  TEMP
+                    // // TEMP
+                    // this.enterCategory('SOCI')
+                    // this.enterClassification(3315)
+                    // this.enterSource(16306)
+                    // //  TEMP
                 } else {
                     this.searches = response.results
                 }
@@ -386,10 +407,10 @@ const app = createApp({
             }
         },
 
-        async fetchSearchSources(search_id, classification) {
+        async fetchSearchSources(searchId, classification) {
             // Fetch data
             let data = {classification: classification}
-            let response = await internalGet(`/search-results/${search_id}/sources?classification=${classification}`)
+            let response = await internalGet(`/search-results/${searchId}/sources?classification=${classification}`)
             if (response) {
                 this.searchResultSources = {...this.searchResultSources, [classification]: response.results}
             } else {
@@ -397,17 +418,39 @@ const app = createApp({
             }
         },
 
-        async fetchSearchEntries(search_id, classification, source) {
+        async fetchSearchEntries(searchId, classification, source, reset=false) {
+            const offset = reset ? 0 : this.entriesOffset
             // Fetch data
             let data = {classification: classification}
-            // TODO: Handle pagination
-            let response = await internalGet(`/search-results/${search_id}/entries?classification=${classification}&source=${source}&limit=100&offset=0`)
+            let url = `/search-results/${searchId}/entries?classification=${classification}&source=${source}&limit=${LIMIT}&offset=${offset}`
+            let response = await internalGet(url)
             if (response) {
-                this.entries = {...this.entries, [classification]: response.results}
+                // TODO: comment
+                if (reset || !this.entries[classification]) {
+                    this.entries = {...this.entries, [classification]: response.results}
+                } else {
+                    this.entries = {...this.entries, [classification]: [...this.entries[classification], ...response.results]}
+                }
+                this.entriesCount = response.count
+                this.entriesOffset += LIMIT
             } else {
                 this.errors.push(`Failed to retrieve entries`)
             }
         },
+
+        async fetchMoreSearchEntries() {
+            this.fetchSearchEntries(this.search.id, this.classification, this.source, false)
+        },
+
+        async fetchAbstract(scopusId) {
+            // Fetch data
+            let response = await internalGet(`/abstract/${scopusId}`)
+            if (response && response.abstract) {
+                return response.abstract
+            } else {
+                this.errors.push(`Failed to retrieve abstract`)
+            }
+        }
     },
 })
 

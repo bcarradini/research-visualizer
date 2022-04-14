@@ -38,8 +38,9 @@ def abstract(request, scopus_id):
     request -- an HttpRequest object
     scopus_id -- a Scopus ID
     """
-    results = get_abstract(scopus_id)
-    return JsonResponse({'results': results}, status=200)
+    abstract = get_abstract(scopus_id)
+    print(f"TEMP: abstract(): abstract = {abstract}")
+    return JsonResponse({'abstract': abstract}, status=200)
 
 
 @require_POST
@@ -126,7 +127,6 @@ def search_result_sources(request, search_id):
 @require_GET
 def search_result_entries(request, search_id):
     """TODO: comments"""
-    print(f"TEMP: search_result_entries(): request.GET = {request.GET}")
     # Unpack query params
     code = request.GET.get('classification')
     source_id = request.GET.get('source')
@@ -136,11 +136,8 @@ def search_result_entries(request, search_id):
 
     # Validate request
     search = _get_search(search_id)
-    print(f"TEMP: search_result_entries(): search = {search}")
     classification = _get_classification(code)
-    print(f"TEMP: search_result_entries(): classification = {classification}")
     source = _get_source(source_id)
-    print(f"TEMP: search_result_entries(): source = {source}")
 
     # TODO: comment
     entries = SearchResult_Entry.objects.filter(
@@ -148,7 +145,6 @@ def search_result_entries(request, search_id):
         category_abbr=classification.category_abbr,
         scopus_source=source,
     )
-    print(f"TEMP: search_result_entries(): entries.query = {entries.query}")
 
     # TODO: comment
     entries_page = entries.order_by('title')[offset:offset+limit]

@@ -38,7 +38,6 @@ const BarChart = {
     //
 
     created: function() {
-        console.log('TEMP: BarChart.created(): ')
     },
 
     //
@@ -62,17 +61,7 @@ const BarChart = {
                         },
                     },
                 },
-                onClick: function (e) {
-                    console.log('TEMP: e =', e)
-                    let chart = e.chart
-                    console.log('TEMP: chart =', chart)
-                    let elemIdx = e.chart.getActiveElements()[0].index
-                    console.log('TEMP: elemIdx =', elemIdx)
-                    let elemLabel = chart.data.labels[elemIdx]
-                    console.log('TEMP: elemLabel =', elemLabel)
-                    let elemId = chart.data.datasets[0].vizIds[elemIdx]
-                    console.log('TEMP: elemId =', elemId)
-                }
+                onClick: this.handleChartClick,
             }
         },
         width() {
@@ -95,6 +84,18 @@ const BarChart = {
     // 
 
     methods: {
+        emitChartClick(vizId) {
+                 
+        },
+        handleChartClick(event, activeElements, chart) {
+            // If there is an active chart element, use its index to unpack the chart dataset
+            if (activeElements[0]) {
+                let elemIdx = activeElements[0].index
+                let vizId = chart.data.datasets[0].vizIds[elemIdx]
+                // Emit signal to parent component
+                this.$emit('chart-click', vizId)
+            }
+        },
     },
 }
 
