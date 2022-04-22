@@ -32,7 +32,7 @@
     "chart.js": "^3.7.1",
     "node-sass": "^7.0.0",
     "postcss-cli": "^9.0.2",
-    "v-network-graph": "^0.3.8",
+    "v-network-graph": "^0.4.0",
     "vue": "^3.2.23",
     "vue-chartjs": "^4.0.5",
     "vue-resource": "^1.5.3"
