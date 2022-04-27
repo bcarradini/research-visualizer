@@ -16,23 +16,21 @@ export async function internalGet(url) {
   if (apiDebug) console.log('internalGet():', url)
 
   // Make GET request
-  let response = await $.ajax({
-    type: 'GET',
-    url: url,
-    headers: _assembleHeaders(),
-    success: function(data) {
+  try {
+    return await $.ajax({
+      type: 'GET',
+      url: url,
+      headers: _assembleHeaders(),
+      dataType: 'json',
+      contentType : 'application/json',
+    })
+    .done(function(data) {
       if (apiDebug) console.log('internalGet(): SUCCESS:', url, data)
       return data
-    },
-    error: function(error) {
-      console.error('internalGet(): ERROR:', url, error)
-      return null
-    },
-    dataType: 'json',
-    contentType : 'application/json'
-  });
-
-  return response
+    })
+  } catch (error) {
+    console.error('internalGet(): ERROR:', url, error)
+  }
 }
 
 export async function internalPost(url, payload) {
@@ -40,22 +38,20 @@ export async function internalPost(url, payload) {
   payload.csrfmiddlewaretoken = Cookies.get('csrftoken')
 
   // Make POST request
-  let response = await $.ajax({
-    type: 'POST',
-    url: url,
-    data: JSON.stringify(payload),
-    headers: _assembleHeaders(),
-    success: function(data) {
+  try {
+    return await $.ajax({
+      type: 'POST',
+      url: url,
+      data: JSON.stringify(payload),
+      headers: _assembleHeaders(),
+      dataType: 'json',
+      contentType : 'application/json',
+    })
+    .done(function(data) {
       if (apiDebug) console.log('internalPost(): SUCCESS:', url, data)
       return data
-    },
-    error: function(error) { 
-      console.error('internalPost(): ERROR:', url, error)
-      return null
-    },
-    dataType: 'json',
-    contentType : 'application/json'
-  });
-
-  return response
+    })
+  } catch (error) {
+    console.error('internalPost(): ERROR:', url, error)
+  }
 }

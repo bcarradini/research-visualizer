@@ -199,17 +199,17 @@ const app = createApp({
     // Setup graph spoke nodes based on search results, which may be first-level results across
     // all categories or second-level results across all classifications within a category
     async setupSpokeNodes(category=null) {
+      // Clear out spoke nodes on instance and wait for DOM to update; otherwise, the NetworkGraph child component
+      // will be updated instead of being unmounted/mounted, leading to rendering issues. 
+      this.spokeNodes = []
+      await nextTick()
+ 
       // Identify results set
       let results = this.searchResults || {}
       if (category) {
         results = this.searchResults[category] || {}
       }
       if (_.isEmpty(results)) return
- 
-      // Clear out spoke nodes on instance and wait for DOM to update; otherwise, the NetworkGraph child component
-      // will be updated instead of being unmounted/mounted, leading to rendering issues. 
-      this.spokeNodes = []
-      await nextTick()
  
       // Determine which nodes as the largest result count (for scaling node sizes)
       let maxCount = Math.max(...Object.entries(results).map(([key, obj]) => {
@@ -237,14 +237,6 @@ const app = createApp({
         })
       }
  
-      // TEMP
-      let nodeCnt = nodes.length
-      let circles = (nodeCnt && Math.max(1, Math.min(4, Math.floor(nodeCnt/12)))) || 0
-      for (let i = 0; i < nodeCnt; i++) {
-        nodes[i].zIndex = (i % circles)
-      }
-      // TEMP
-
       // Set spoke nodes on instance
       this.spokeNodes = nodes
     },
@@ -258,16 +250,16 @@ const app = createApp({
     //
 
     async setupChartData(classification) {
+      // Clear out chart data on instance and wait for DOM to update
+      this.chartData = {}
+      await nextTick()
+
       // Identify results set
       let results = {}
       if (classification) {
         results = this.searchResultSources[classification] || {}
       }
       if (_.isEmpty(results)) return
-
-      // Clear out chart data on instance and wait for DOM to update
-      this.chartData = {}
-      await nextTick()
 
       // Prepare chart data
       let vizIds = []
@@ -417,10 +409,13 @@ const app = createApp({
 
     async fetchSearchSources(searchId, classification) {
       // Fetch data
-      let data = {classification: classification}
       let response = await internalGet(`/search-results/${searchId}/sources?classification=${classification}`)
       if (response) {
-        this.searchResultSources = {...this.searchResultSources, [classification]: response.results}
+        let results = response.results || []
+        this.searchResultSources = {
+            ...this.searchResultSources,
+            [classification]: results.sort((a,b) => b.count - a.count)
+        }
       } else {
         this.errors.push(`Failed to retrieve sources`)
       }

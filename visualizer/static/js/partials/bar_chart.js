@@ -26,10 +26,6 @@ const BarChart = {
 
   data() {
     return {
-      // chartData: {
-      //   labels: [ 'January', 'February', 'March' ],
-      //   datasets: [ { data: [40, 20, 12] } ],
-      // },
     }
   },
 
@@ -68,7 +64,7 @@ const BarChart = {
       return 100 + (this.chartData.labels.length * 25)
     },
     height() {
-      return 800
+      return 1000
     },
   },
 

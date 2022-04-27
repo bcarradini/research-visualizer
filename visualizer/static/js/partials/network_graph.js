@@ -20,31 +20,52 @@ const NetworkGraph = {
     return {
       configs: {
         view: {
-          scalingObjects: true,
-          minZoomLevel: 0.1,
-          maxZoomLevel: 16,
           panEnabled: false,
           zoomEnabled: false,
+          autoPanAndZoomOnLoad: 'fit-content'
         },
         node: {
           draggable: false,
           normal: {
             radius: node => node.size,
             color: node => node.color,
+            strokeWidth: 3,
+            strokeColor: node => node.color,
+          },
+          hover: {
+            radius: node => node.size,
+            color: node => node.color,
+            // same stroke width, different color
+            strokeWidth: 3,
+            strokeColor: '#ffd700', // $gold
           },
           label: {
             fontSize: 16,
             text: 'name',
-            // text: n => `z-index: ${n.zIndex}`,
           },
           zOrder: {
-           enabled: true,
-           zIndex: n => {
-             console.log('TEMP: eval zIndex:', n.zIndex)
-             return n.zIndex
-           },
-           // bringToFrontOnHover: true,
-           // bringToFrontOnSelected: true,
+            enabled: true,
+            zIndex: (n) => n.zIndex,
+            bringToFrontOnHover: true,
+            bringToFrontOnSelected: true,
+          },
+        },
+        edge: {
+          selectable: false,
+          normal: {
+            width: 2,
+            color: '#e0e0e0', // $midGray
+          },
+          hover: {
+            // same stroke width, same color (prevent visible change on hover)
+            width: 2,
+            color: '#e0e0e0', // $midGray
+          },
+          zOrder: {
+            enabled: true,
+            zIndex: 0,
+            bringToFrontOnHover: false,
+            bringToFrontOnSelected: false,
           },
         },
       },
@@ -54,7 +75,7 @@ const NetworkGraph = {
         color: 'black',
         nodeId: '',
       },
-      minRadius: 400,
+      minRadius: 350,
     }
   },
 
@@ -63,7 +84,6 @@ const NetworkGraph = {
   //
 
   created: function() {
-    console.log('TEMP: NetworkGraph.created(): ')
   },
 
 
@@ -81,7 +101,7 @@ const NetworkGraph = {
     spokeRadians() {
       return (this.spokeNodesCnt && (2*Math.PI/this.spokeNodesCnt)) || 0
     },
-    spokeConcentricCircles() {
+    concentricCircles() {
       // Return the number of concetric circles, between 1 and 4 inclusive, to use for laying
       // out the spoke nodes (adjacent nodes will be plotted along different circlular paths)
       return (this.spokeNodesCnt && Math.max(1, Math.min(4, Math.floor(this.spokeNodesCnt/12)))) || 0
@@ -95,6 +115,7 @@ const NetworkGraph = {
       for (let i = 0; i < this.spokeNodesCnt; i++) {
         let nodeId = this.spokeNodes[i].nodeId
         nodes[nodeId] = this.spokeNodes[i]
+        nodes[nodeId].zIndex = -(i % this.concentricCircles)
       }
       return nodes
     },
@@ -120,7 +141,7 @@ const NetworkGraph = {
       for (let i = 0; i < this.spokeNodesCnt; i++) {
         let nodeId = this.spokeNodes[i].nodeId
         // Scale radians cyclically to spread nodes out across concentric circles for easier reading
-        let scale = 1 + ((i % this.spokeConcentricCircles) * 0.2)
+        let scale = 1 + ((i % this.concentricCircles) * 0.2)
         layout['nodes'][nodeId] = {
           x: (this.minRadius * scale) * Math.cos(radians),
           y: (this.minRadius * scale) * Math.sin(radians),
@@ -129,6 +150,12 @@ const NetworkGraph = {
       }
       return layout
     },
+    graphStyles() {
+      return {
+        '--svg-width': this.concentricCircles <= 2 ? '1500px' : '2000px',
+        '--svg-height': this.concentricCircles <= 2 ? '1500px' : '2000px',
+      }
+    }
   },
 
   // 

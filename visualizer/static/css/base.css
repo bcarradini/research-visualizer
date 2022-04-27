@@ -13,6 +13,7 @@ $white: #ffffff;
 $lightGray: #f5f5f5;
 $midGray: #e0e0e0;
 $darkGray: #333333;
+$gold: #ffd700;
 */
 
 /* Position */
@@ -67,7 +68,69 @@ $darkGray: #333333;
 
 */
 
-/* TODO: comment */
+
+/* Network Graph */
+
+.network-graph {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.v-network-graph {
+  position: relative;
+  padding: 0;
+  /*width: 100%;*/
+  /*height: 100%;*/
+  width: var(--svg-width);
+  height: var(--svg-height);
+}
+.v-canvas {
+  /* There's probably a better way to position the graph on the page, but I suck at stylesheets */
+  overflow: visible !important;
+  width: 100%;
+  height: 100%;
+/*
+  position: absolute;
+  left: 500px;
+  top: 500px;
+*/
+}
+.outer-box {
+/*  margin: 12px;
+  width: 2000px;
+  height: 2000px;
+  position: relative;
+  background-color: #aaaaaa;
+*/}
+.resizable {
+  position: relative;
+  resize: both;
+  overflow: hidden;
+  min-width: 100px;
+  min-height: 100px;
+  max-width: 100%;
+  max-height: 100%;
+  width: 90%;
+  height: 90%;
+  border: 1px solid #444444;
+  background-color: #ffffff;
+}
+.handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-left: 8px solid transparent;
+  border-right: 8px solid #ff8f8f;
+  border-bottom: 8px solid #ff8f8f;
+  pointer-events: none;
+}
+
+
+
 /*.network-graph {
   position: relative;
   width: 100%;
