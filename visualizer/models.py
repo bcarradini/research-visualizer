@@ -23,6 +23,8 @@ NEXT_CURSOR = 'next_cursor'
 
 
 class ScopusClassification(TimeStampedModel):
+    UNKNOWN = 'unknown'
+
     # Classification; e.g. 1602, "Analytical Chemistry"
     code = models.CharField(max_length=8)
     name = models.CharField(max_length=64)

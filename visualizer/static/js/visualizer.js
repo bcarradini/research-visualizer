@@ -161,6 +161,7 @@ const app = createApp({
 
     getLabelColor(str) {
       // Ref: https://stackoverflow.com/a/16348977/9871562
+      str = str || ''
       let hash = 0
       for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash)
@@ -267,7 +268,7 @@ const app = createApp({
       let counts = []
       let colors = []
       for (let result of results) {
-        vizIds.push(result.id)
+        vizIds.push(result.id || result.name)
         labels.push(result.name)
         counts.push(result.count)
         colors.push(this.getLabelColor(result.name))
@@ -322,7 +323,7 @@ const app = createApp({
     async enterClassification(classification) {
       // Set classification on instance; setup spoke nodes to view intra-classification results
       this.classification = classification
-      await this.fetchSearchSources(this.search.id, classification)
+      await this.fetchSearchSources(this.search.id, this.category, this.classification)
       this.setupChartData(this.classification)
     },
 
@@ -338,7 +339,7 @@ const app = createApp({
 
     enterSource(source) {
       this.source = source
-      this.fetchSearchEntries(this.search.id, this.classification, source, true)
+      this.fetchSearchEntries(this.search.id, this.category, this.classification, this.source, true)
     },
 
     exitSource(source) {
@@ -407,25 +408,24 @@ const app = createApp({
       }
     },
 
-    async fetchSearchSources(searchId, classification) {
+    async fetchSearchSources(searchId, category, classification) {
       // Fetch data
-      let response = await internalGet(`/search-results/${searchId}/sources?classification=${classification}`)
+      let response = await internalGet(`/search-results/${searchId}/sources?category=${category}&classification=${classification}`)
       if (response) {
         let results = response.results || []
         this.searchResultSources = {
             ...this.searchResultSources,
-            [classification]: results.sort((a,b) => b.count - a.count)
+            [classification]: results.sort((a,b) => b.count - a.count).slice(0,500) // We can only chart so many data points
         }
       } else {
         this.errors.push(`Failed to retrieve sources`)
       }
     },
 
-    async fetchSearchEntries(searchId, classification, source, reset=false) {
+    async fetchSearchEntries(searchId, category, classification, source, reset=false) {
       const offset = reset ? 0 : this.entriesOffset
       // Fetch data
-      let data = {classification: classification}
-      let url = `/search-results/${searchId}/entries?classification=${classification}&source=${source}&limit=${LIMIT}&offset=${offset}`
+      let url = `/search-results/${searchId}/entries?category=${category}&classification=${classification}&source=${source}&limit=${LIMIT}&offset=${offset}`
       let response = await internalGet(url)
       if (response) {
         // TODO: comment
@@ -442,7 +442,7 @@ const app = createApp({
     },
 
     async fetchMoreSearchEntries() {
-      this.fetchSearchEntries(this.search.id, this.classification, this.source, false)
+      this.fetchSearchEntries(this.search.id, this.category, this.classification, this.source, false)
     },
 
     async fetchAbstract(scopusId) {

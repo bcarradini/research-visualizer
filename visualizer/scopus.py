@@ -212,7 +212,7 @@ def _search_category(search, category):
         }
 
     # Get entry count for unknown classification
-    counts['unknown'] = {
+    counts[ScopusClassification.UNKNOWN] = {
         'name': 'Unknown',
         'count': entries.filter(scopus_source__isnull=True).count(),
     }

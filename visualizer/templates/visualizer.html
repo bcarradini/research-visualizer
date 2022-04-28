@@ -35,13 +35,6 @@
                 <a @click.prevent="selectSearch(search)">${ search.query }, ${ search.categories }, ${ search.finished_at }</a>
             </div>
         </div>
-<!-- TEMP -->
-<!--         <div class="posFixed | fbColCtrCtr | bgMask" style="z-index: 20000">
-            <div class="posRel | bgLight" style="width: 100%; max-width: 640px; max-height: 100%;">
-                Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit Lorem ipsum dolor sit 
-            </div>
-        </div>
- --><!-- TEMP -->
     </div>
 
     <!-------------------->
@@ -78,7 +71,7 @@
         <!-- Fourth-level search results: entries for classification & source -->
         <div v-if="source">
             <!-- TODO: Turn this into a component -->
-            <div>
+            <div v-if="classificationEntries">
                 <table>
                     <tr>
                         <td>Document Type</td>

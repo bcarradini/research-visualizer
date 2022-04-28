@@ -5,7 +5,7 @@ Views to support Visualizer URLs
 import json
 
 # 3rd party
-from django.db.models import Count
+from django.db.models import Count, F
 from django.http import JsonResponse, Http404
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
@@ -95,27 +95,30 @@ def search_results(request, search_id=None):
 @require_GET
 def search_result_sources(request, search_id):
     """TODO: comments"""
-    print(f"TEMP: search_result_sources(): request.GET = {request.GET}")
     # Unpack query params
-    code = request.GET.get('classification')
+    category_abbr = request.GET.get('category')
+    classification_code = request.GET.get('classification')
 
     # Validate request
     search = _get_search(search_id)
-    print(f"TEMP: search_result_sources(): search = {search}")
-    classification = _get_classification(code)
-    print(f"TEMP: search_result_sources(): classification = {classification}")
+    classification = _get_classification(category_abbr, classification_code)
 
     # TODO: comment
-    sources = ScopusSource.objects.filter(
-        classifications=classification,
-        entries__search=search,
-        entries__category_abbr=classification.category_abbr,
-    ).distinct().annotate(count=Count('entries')).values('source_id','source_name','count')
+    if classification:
+        sources = ScopusSource.objects.filter(
+            classifications=classification,
+            entries__search=search,
+            entries__category_abbr=classification.category_abbr,
+        ).distinct().annotate(count=Count('entries')).values('source_id','source_name','count')
+    else:
+        sources = SearchResult_Entry.objects.filter(
+            search_id=search, category_abbr=category_abbr, scopus_source__isnull=True
+        ).values('publication_name').annotate(count=Count('id'),source_name=F('publication_name')).values('source_name','count')
 
     # TODO: comment
     response = {
         'results': [{
-            'id': source['source_id'], # TODO: This is confusing; source_id comes from Scopus; it's not our primary key
+            'id': source.get('source_id'), # TODO: This is confusing; source_id comes from Scopus; it's not our primary key
             'name': source['source_name'],
             'count': source['count'],
         } for source in sources]
@@ -128,7 +131,8 @@ def search_result_sources(request, search_id):
 def search_result_entries(request, search_id):
     """TODO: comments"""
     # Unpack query params
-    code = request.GET.get('classification')
+    category_abbr = request.GET.get('category')
+    classification_code = request.GET.get('classification')
     source_id = request.GET.get('source')
     limit = int(request.GET.get('limit', MAX_LIMIT))
     offset = int(request.GET.get('offset', 0))
@@ -136,15 +140,22 @@ def search_result_entries(request, search_id):
 
     # Validate request
     search = _get_search(search_id)
-    classification = _get_classification(code)
-    source = _get_source(source_id)
+    classification = _get_classification(category_abbr, classification_code)
 
     # TODO: comment
-    entries = SearchResult_Entry.objects.filter(
-        search=search,
-        category_abbr=classification.category_abbr,
-        scopus_source=source,
-    )
+    if classification:
+        source = _get_source(source_id)
+        entries = SearchResult_Entry.objects.filter(
+            search=search,
+            category_abbr=classification.category_abbr,
+            scopus_source=source,
+        )
+    else:
+        entries = SearchResult_Entry.objects.filter(
+            search=search,
+            category_abbr=category_abbr,
+            publication_name=source_id,
+        )
 
     # TODO: comment
     entries_page = entries.order_by('title')[offset:offset+limit]
@@ -162,7 +173,7 @@ def search_result_entries(request, search_id):
             'first_author': entry.first_author,
             'document_type': entry.document_type,
             'publication_name': entry.publication_name,
-            'scopus_source_id': entry.scopus_source.id,
+            'scopus_source_id': entry.scopus_source and entry.scopus_source.id,
         } for entry in entries_page]
     }
 
@@ -201,12 +212,15 @@ def _get_search(search_id):
     except:
         raise Http404(f"Search not found, {search_id}")
 
-def _get_classification(code):
+def _get_classification(category_abbr, classification_code):
     """TODO: comment"""
     try:
-        return ScopusClassification.objects.get(code=code)
+        if classification_code == ScopusClassification.UNKNOWN:
+            assert category_abbr, f"Category must be specified when classification is {ScopusClassification.UNKNOWN}"
+            return None
+        return ScopusClassification.objects.get(code=classification_code)
     except:
-        raise Http404(f"Classification not found, {code}")
+        raise Http404(f"Classification not found, {classification_code}")
 
 def _get_source(source_id):
     """TODO: comment"""

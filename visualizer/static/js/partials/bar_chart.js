@@ -26,6 +26,7 @@ const BarChart = {
 
   data() {
     return {
+      barThickness: 15,
     }
   },
 
@@ -54,17 +55,27 @@ const BarChart = {
             type: 'category',
             ticks: {
               autoSkip: false,
+              callback: function(value, index, ticks) {
+                let label = (this.getLabelForValue(value) || '')
+                if (label.length > 55) {
+                  label = `${label.slice(0,55)}...`
+                }
+                return label
+              },
             },
           },
         },
         onClick: this.handleChartClick,
+        barThickness: this.barThickness,
+        minBarLength: 4,
       }
     },
     width() {
-      return 100 + (this.chartData.labels.length * 25)
+      let bars = this.chartData.labels.length
+      return 150 + (bars * this.barThickness*1.5)
     },
     height() {
-      return 1000
+      return 800
     },
   },
 
@@ -84,9 +95,6 @@ const BarChart = {
          
     },
     handleChartClick(event, activeElements, chart) {
-      console.log('TEMP: handleChartClick(): event =', event)
-      console.log('TEMP: handleChartClick(): activeElements =', activeElements)
-      console.log('TEMP: handleChartClick(): chart =', chart)
       // If there is an active chart element, use its index to unpack the chart dataset
       if (activeElements[0]) {
         let elemIdx = activeElements[0].index

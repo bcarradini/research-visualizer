@@ -75,7 +75,6 @@ const NetworkGraph = {
         color: 'black',
         nodeId: '',
       },
-      minRadius: 350,
     }
   },
 
@@ -105,6 +104,9 @@ const NetworkGraph = {
       // Return the number of concetric circles, between 1 and 4 inclusive, to use for laying
       // out the spoke nodes (adjacent nodes will be plotted along different circlular paths)
       return (this.spokeNodesCnt && Math.max(1, Math.min(4, Math.floor(this.spokeNodesCnt/12)))) || 0
+    },
+    minRadius() {
+      return 400 - (25 * this.concentricCircles)
     },
     nodes() {
       // Initialize nodes object with hub node
