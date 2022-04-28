@@ -26,7 +26,8 @@ const BarChart = {
 
   data() {
     return {
-      barThickness: 15,
+      barThickness: 20,
+      maxLabelChars: 55,
     }
   },
 
@@ -42,7 +43,21 @@ const BarChart = {
   //
 
   computed: {
+    chartPadding() {
+      // Generate array of label lengths for the 3 left-most labels (labels skew to the left)
+      let labelChars = this.chartData.labels.slice(0,3).map(l => l.length)
+      // Get the max length of the 3 left-most-labels
+      let maxLabelChars = Math.min(this.maxLabelChars, Math.max(...labelChars))
+      // Scale left padding based on max label length
+      return {
+        top: 0,
+        left: 150 * (maxLabelChars / this.maxLabelChars),
+        bottom: 0,
+        right: 0,
+      }
+    },
     chartOptions() {
+      let vm = this
       return {
         plugins: {
           legend: {
@@ -50,29 +65,33 @@ const BarChart = {
           },
         },
         responsive: false, // don't resize to display; data will easily become unreadable
+        layout: {
+          padding: vm.chartPadding,     
+        },
         scales: {
           x: {
             type: 'category',
             ticks: {
               autoSkip: false,
-              callback: function(value, index, ticks) {
+              callback(value, index, ticks) {
                 let label = (this.getLabelForValue(value) || '')
-                if (label.length > 55) {
-                  label = `${label.slice(0,55)}...`
+                // Truncate labels
+                if (label.length > vm.maxLabelChars) {
+                  label = `${label.slice(0,vm.maxLabelChars)}...`
                 }
                 return label
               },
             },
           },
         },
-        onClick: this.handleChartClick,
-        barThickness: this.barThickness,
+        onClick: vm.handleChartClick,
+        barThickness: vm.barThickness,
         minBarLength: 4,
       }
     },
     width() {
       let bars = this.chartData.labels.length
-      return 150 + (bars * this.barThickness*1.5)
+      return bars * this.barThickness*1.5
     },
     height() {
       return 800

@@ -382,9 +382,9 @@ const app = createApp({
           this.searchResults = response.results
           this.setupSpokeNodes()
           // // TEMP
-          // this.enterCategory('SOCI')
-          // this.enterClassification(3315)
-          // this.enterSource(16306)
+          // this.enterCategory('COMP') // 'SOCI'
+          // this.enterClassification(1710) // 3315
+          // this.enterSource(19700177337) // 16306
           // // TEMP
         } else {
           this.searches = response.results
