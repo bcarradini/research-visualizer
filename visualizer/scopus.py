@@ -168,7 +168,8 @@ def get_subject_area_classifications():
         classifications[classification['code']] = {
             'code': classification['code'],
             'name': classification['detail'],
-            'category': category,
+            'category_abbr': category,
+            'category_name': classification['description'],
         }
         if category not in categories:
             categories[category] = {

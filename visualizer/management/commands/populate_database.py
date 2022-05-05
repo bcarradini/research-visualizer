@@ -58,11 +58,11 @@ class Command(BaseCommand):
 
         # TODO: comment
         if self.execute:
-            for c in classifications:
+            for _, c in classifications.items():
                 ScopusClassification.objects.update_or_create(code=c['code'], defaults={
-                    'name': c['detail'],
-                    'category_abbr': c['abbrev'],
-                    'category_name': c['description'],
+                    'name': c['name'],
+                    'category_abbr': c['category_abbr'],
+                    'category_name': c['category_name'],
                 })
 
         # TODO: comment
