@@ -51,9 +51,9 @@ const BarChart = {
       // Scale left padding based on max label length
       return {
         top: 0,
-        left: 150 * (maxLabelChars / this.maxLabelChars),
+        left: 150 * Math.max(1, (maxLabelChars / this.maxLabelChars)),
         bottom: 0,
-        right: 0,
+        right: 50,
       }
     },
     chartOptions() {
@@ -91,7 +91,7 @@ const BarChart = {
     },
     width() {
       let bars = this.chartData.labels.length
-      return bars * this.barThickness*1.5
+      return this.chartPadding.left + this.chartPadding.right + (bars * this.barThickness*1.5)
     },
     height() {
       return 800
