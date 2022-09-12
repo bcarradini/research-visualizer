@@ -193,7 +193,7 @@ def visualizer(request):
 
 def _search(query, categories=None):
     """Private handler for public `search()` view. See that function for more details. This is for
-    testing convenice, so that async jobs can be queued without an HTTP request being involved.
+    testing convenience, so that async jobs can be queued without an HTTP request being involved.
     """
     search_obj = Search.init_search(query, categories)
     job = queue_job(get_search_results, args=(query, categories, search_obj.id), job_timeout=12*60*60)
