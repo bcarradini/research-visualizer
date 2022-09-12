@@ -101,6 +101,10 @@ def get_search_results(query, categories=None, search_id=None):
         treated as whole phrases but that punctuation/pluralization are ignored. For example,
         if the query is "social media", documents that contain only "social" or "media" will be
         excluded but documents containing "social-media" or "social medias" will be included.
+    - Search supports a limited number of boolean operators (see BOOLEAN_OPERATORS constant).
+    - Search is case-insensitive with regard to query terms but case-sensitive with regard to boolean
+        operators embedded in the query string. In other words, lowercase "and" will be treated
+        as a query term but uppercase "AND" will be treated as a boolean operator.
 
     Arguments:
     query -- a string; the search query
@@ -145,7 +149,8 @@ def get_search_results(query, categories=None, search_id=None):
 def get_subject_area_classifications():
     """Return dictionary of Scopus subject area classifications (and parent categories).
 
-    Ref: https://dev.elsevier.com/documentation/SubjectClassificationsAPI.wadl
+    References:
+    https://dev.elsevier.com/documentation/SubjectClassificationsAPI.wadl
     """
     categories, classifications = {}, {}
 
@@ -255,7 +260,9 @@ def _search_category_entries(search, category):
     print(f"_search_category_entries(): INFO: {search.query}, {category}, cursor {page_cursor}")
 
     # Assemble query URL without pagination markers
-    query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query=ABS("{search.query}") AND SUBJAREA({category}) AND DOCTYPE({DOCTYPES_QUERY})'
+    print(f"TEMP: _search_category_entries(): search.scopus_query = {search.scopus_query}")
+    query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query=ABS({search.scopus_query}) AND SUBJAREA({category}) AND DOCTYPE({DOCTYPES_QUERY})'
+    print(f"TEMP: _search_category_entries(): query_url = {query_url}")
 
     #
     # -- Paginate through Scopus search results
@@ -305,7 +312,11 @@ def _search_category_entries(search, category):
 
             # Check for any other errors
             if 'error' in entries[0]:
-                raise Exception({entries[0]['error']})
+                if 'set was empty' in entries[0]['error']:
+                    print(f"_search_category_entries(): INFO: {search.query}, {category}, page {page}, no entries, end pagination")
+                    break
+                else:
+                    raise Exception(entries[0]['error'])
         except Exception as exc:
             print(f"_search_category_entries(): ERROR: {exc}, {url}, {response.headers}, {response.json().keys()}")
             raise exc

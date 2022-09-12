@@ -58,10 +58,10 @@ def search(request):
     body = json.loads(request.body)
 
     # Launch asynchronous search
-    job_id, search_id = _search(body['query'], body.get('categories'))
+    job, search = _search(body['query'], body.get('categories'))
 
     # Respond with job ID and search ID
-    return JsonResponse({'job': {'id': job_id, 'search_id': search_id}}, status=200)
+    return JsonResponse({'job': {'id': job.id}, 'search': _serialize_search(search)}, status=200)
 
 
 @require_GET
@@ -78,15 +78,9 @@ def search_results(request, search_id=None):
 
     # TODO: comment
     else:
+        searches = Search.objects.filter(finished=True, deleted=False).order_by('query', '-created')
         response = {
-            'results': [{
-                'id': search.id,
-                'query': search.query,
-                'categories': search.context[CATEGORIES],
-                'finished_categories': search.context[FINISHED_CATEGORIES],
-                'finished': search.finished,
-                'finished_at': search.categories.order_by('-modified').first().modified, # TODO: improve hack
-            } for search in Search.objects.filter(finished=True, deleted=False).order_by('query', '-created')]
+            'results': [_serialize_search(search) for search in searches]
         }
 
     return JsonResponse(response, status=200)
@@ -203,7 +197,7 @@ def _search(query, categories=None):
     """
     search_obj = Search.init_search(query, categories)
     job = queue_job(get_search_results, args=(query, categories, search_obj.id), job_timeout=12*60*60)
-    return (job.id, search_obj.id)
+    return (job, search_obj)
 
 def _get_search(search_id):
     """TODO: comment"""
@@ -228,3 +222,16 @@ def _get_source(source_id):
         return ScopusSource.objects.get(source_id=source_id)
     except:
         raise Http404(f"Classification not found, {code}")
+
+def _serialize_search(search):
+    last_finished_category = search.categories.order_by('-modified').first()
+    return {
+        'id': search.id,
+        'query': search.query,
+        'categories': search.context[CATEGORIES],
+        'all_categories': set(search.context[CATEGORIES]) == set(ScopusClassification.all_categories()),
+        'finished_categories': search.context[FINISHED_CATEGORIES],
+        'finished': search.finished,
+        'finished_at': last_finished_category and last_finished_category.modified, # TODO: improve hack
+        'started_at': search.created,
+    }

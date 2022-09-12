@@ -8,45 +8,23 @@
 
 <!-- Content block -->
 {% block content %}
-<section v-cloak id="visualizer">
+<section v-cloak id="visualizer" class="p10">
 
-    <!----------->
-    <!-- Setup -->
-    <!----------->
+    <!------------->
+    <!-- Loading -->
+    <!------------->
 
-    <div v-if="loadingPage">
-        Loading...
-    </div>
-    <div v-else-if="selectingSearch">
-        <div>
-        Enter a search query to generate new results or select from the list of existing search results.
+    <template v-if="loadingPage">
+        <div class="p10 mt10">
+            Loading...
         </div>
-
-        <!-- Search bar -->
-        <div>
-            <div>New Search:</div>
-            <input v-model=query type="text"></input>
-            <a @click.prevent="initiateSearch" class="btn">Search</a>
-        </div>
-
-        <div v-if="searches && searches.length">
-            <div>Existing Search Results:</div>
-            <div v-for="search in searches">
-                <a @click.prevent="selectSearch(search)">${ search.query }, ${ search.categories }, ${ search.finished_at }</a>
-            </div>
-        </div>
-    </div>
+    </template>
 
     <!-------------------->
     <!-- Search results -->
     <!-------------------->
 
-    <div v-else-if="loadingSearchResults">
-        Loading...
-        <!-- TODO: Provide status for real-time search on the categories being searched, one by one -->
-    </div>
-
-    <div v-else>
+    <div v-else-if="searchResults">
         <!-- Breadcrumbs -->
         <div v-if="source">
             <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ categoryName(category) }</a> > <a @click="exitSource">${ classificationName(classification) }</a> > ${ sourceName(source) }
@@ -94,8 +72,8 @@
                 <div v-if="moreEntries" @click="fetchMoreSearchEntries">Load more entries</div>
             </div>
             <!-- Entry modal -->
-            <div v-if="entry" class="posFixed | fbColCtrCtr | bgMask" style="z-index: 20000">
-                <div class="posRel | bgMid" style="width: 100%; max-width: 640px; max-height: 100%;">
+            <div v-if="entry" class="posFixed fbColCtrCtr bgMask" style="z-index: 20000">
+                <div class="posRel bgMid" style="width: 100%; max-width: 640px; max-height: 100%;">
                     <div @click="exitEntry">
                         X
                     </div>
@@ -135,6 +113,67 @@
             <network-graph v-if="!isEmpty(spokeNodes)" :spoke-nodes="spokeNodes" :event-handlers="networkGraphEventHandlers"></network-graph>
         </template>
     </div>
+
+    <!---------------------->
+    <!-- Search selection -->
+    <!---------------------->
+
+    <template v-else>
+        <div class="p10 mt10">
+            <p>Enter a search query to generate new results or browse existing search results.</p>
+            <p class="ml10"><span class="fwBold">PRO TIP:</span> When exploring search results, don't use your browser's back button. Instead, use the breadcrumbs at the top of the page to navigate backward.</p>
+            <p class="ml10"><span class="fwBold">PRO TIP:</span> If pending searches don't seem to ever start, make sure the worker is running.</p>
+        </div>
+
+        <!-- Search bar -->
+        <div class="p10 pb20">
+            <div class="mt10 mb10 fwBold">New Search:</div>
+            <input v-model=query type="text" style="min-width:300px; max-width:600px;"></input>
+            <a @click.prevent="initiateSearch" class="btn btnDrk ml10">Search</a>
+        </div>
+
+        <!-- Pending searches -->
+        <div class="p10 pb20 bgLight">
+            <div class="mt10 mb10 fwBold">Pending Search Results:</div>
+            <table v-if="searchesPending.length">
+                <tr>
+                    <td class="pr20">Query</td>
+                    <td class="pr20">Categories</td>
+                    <td class="pr20">Started At</td>
+                    <td class="pr20">Progress</td>
+                </tr>
+                <tr v-for="search in searchesPending">
+                    <td class="pr20">${ search.query }</td>
+                    <td class="pr20">${ getCategoriesDisplay(search) }</td>
+                    <td class="pr20">${ search.started_at }</td> <!-- TODO: make datetime look pretty -->
+                    <td class="pr20">${ search.finished_categories.length} of ${search.categories.length} categories</td>
+                </tr>
+            </table>
+            <div v-else>
+                No pending searches
+            </div>
+        </div>
+
+        <!-- Completed searches -->
+        <div class="p10 pb20">
+            <div class="mt10 mb10 fwBold">Completed Search Results:</div>
+            <table v-if="searchesCompleted.length">
+                <tr>
+                    <td class="pr20">Query</td>
+                    <td class="pr20">Categories</td>
+                    <td class="pr20">Finished At</td>
+                </tr>
+                <tr v-for="search in searchesCompleted">
+                    <td class="pr20"><a @click.prevent="selectSearch(search)">${ search.query }</a></td>
+                    <td class="pr20">${ getCategoriesDisplay(search) }</td>
+                    <td class="pr20">${ search.finished_at }</td> <!-- TODO: make datetime look pretty -->
+                </tr>
+            </table>
+            <div v-else>
+                No completed searches
+            </div>
+        </div>
+    </template>
 
 </section>
 {% endblock %}

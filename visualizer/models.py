@@ -39,6 +39,10 @@ class ScopusClassification(TimeStampedModel):
     def __str__(self):
         return f"{self.name} ({self.category_abbr})"
 
+    @classmethod
+    def all_categories(cls):
+        return list(ScopusClassification.objects.distinct('category_abbr').values_list('category_abbr', flat=True))
+
 
 class ScopusSource(TimeStampedModel):
     # Journal (or other publication)
@@ -63,6 +67,8 @@ class ScopusSource(TimeStampedModel):
 
 
 class Search(TimeStampedModel):
+    BOOLEAN_OPERATORS = ['AND', 'OR'] # supported boolean operators that may be embedded in the search query; case-sensitive
+
     # Executed search
     query = models.TextField()
     context = jsonb.JSONField(default=dict) # e.g. {'categories': ['MULT','AGRI','CHEM']}
@@ -97,16 +103,33 @@ class Search(TimeStampedModel):
     @classmethod
     def _init_context(cls, categories=None):
         # If no categories were specified, default to all categories
-        if not categories:
-            categories = list(ScopusClassification.objects.distinct('category_abbr').values_list('category_abbr', flat=True))
-            # TODO: Remove prioritization of SOCI after data for proposal is collected
-            categories = sorted(categories, key=lambda category: 0 if category == 'SOCI' else 1)
+        categories = categories or ScopusClassification.all_categories()
         # Return initialize context
         return {CATEGORIES: categories, FINISHED_CATEGORIES: [], NEXT_CATEGORY: None, NEXT_CURSOR: None}
 
     def set_next_cursor(self, category, cursor):
         self.context.update({NEXT_CATEGORY: category, NEXT_CURSOR: cursor})
         self.save()
+
+    @property
+    def scopus_query(self):
+        """TODO: comment"""
+        return self._scopus_query(self.query)
+
+    @classmethod
+    def _scopus_query(cls, query):
+        """TODO: comment
+
+        References:
+        https://dev.elsevier.com/sc_search_tips.html
+        """
+        scopus_query = query
+
+        for operator in cls.BOOLEAN_OPERATORS:
+            scopus_query = f'" {operator} "'.join(scopus_query.split(f' {operator} '))
+
+        return f'"{scopus_query}"'
+
 
 class SearchResult_Category(TimeStampedModel):
     # Executed search

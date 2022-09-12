@@ -7,14 +7,13 @@
   display: none;
 }
 
-/* Colors */
-/*
-$white: #ffffff;
-$lightGray: #f5f5f5;
-$midGray: #e0e0e0;
-$darkGray: #333333;
-$gold: #ffd700;
-*/
+/* Font */
+.fwBold {
+  font-weight: bold;
+}
+.fsSml {
+  font-size: 12px;
+}
 
 /* Position */
 .posFixed {
@@ -39,10 +38,42 @@ $gold: #ffd700;
 .bgMid {
   background-color: #e0e0e0;
 }
+.bgDrk {
+  background-color: #333333;
+}
 
-/* Padding/Margins */
+/* Padding/Margin */
 .p10 {
   padding: 10px;
+}
+.pb20 {
+  padding-bottom: 20px;
+}
+.pr20 {
+  padding-right: 20px;
+}
+.mt10 {
+  margin-top: 10px;
+}
+.mb10 {
+  margin-bottom: 10px;
+}
+.ml10 {
+  margin-left: 10px;
+}
+.mr10 {
+  margin-right: 10px;
+}
+
+
+/* Button */
+.btn {
+  vertical-align: bottom !important;
+  padding: 2px 12px !important;
+}
+.btnDrk {
+  background-color: #333333;
+  color: white;
 }
 
 /* Flexbox */

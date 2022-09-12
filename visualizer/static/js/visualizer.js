@@ -37,7 +37,8 @@ const app = createApp({
       query: null,
       results: {},
       search: null,
-      searches: null, // begin with null to distinguish from [], which indicates "no old searches"
+      searchesCompleted: null, // begin with null to distinguish from [], which indicates "no old searches"
+      searchesPending: [],
       searchResults: null,
       searchResultSources: {},
       source: null,
@@ -81,7 +82,7 @@ const app = createApp({
 
   computed: {
     loadingPage() { 
-      return (this.searches == null) || _.isEmpty(this.categories)
+      return (this.searchesCompleted == null) || _.isEmpty(this.categories)
     },
     selectingSearch() {
       return this.search == null
@@ -124,8 +125,10 @@ const app = createApp({
       if (newSearch) {
         if (newSearch.query != (oldSearch && oldSearch.query) || newSearch.id != (oldSearch && oldSearch.id)) {
           if (newSearch.id) {
+            console.log('search(): fetch old search results', newSearch.id)
             this.fetchOldSearchResults(newSearch.id)
           } else {
+            console.log('search(): fetch new search results', newSearch.query)
             this.fetchNewSearchResults(newSearch.query) // for now, implicitly search all categories
           }
         }
@@ -172,6 +175,17 @@ const app = createApp({
         color += ('00' + value.toString(16)).substr(-2)
       }
       return color
+    },
+
+    getCategoriesDisplay(search) {
+      let categories = search.categories
+      // If search was for "all categories," say as much; otherwise, list categories
+      if (search.all_categories) {
+        return '{all}'
+      } else if (categories) {
+        // if less than 5, return all; otherwise, return first 3 (TODO: provide tooltip to view full list)
+        return categories.length <= 5 ? categories.join(', ') : `${categories.slice(0,3).join(', ')}, ...`
+      }
     },
 
     categoryName(category) {
@@ -387,7 +401,7 @@ const app = createApp({
           // this.enterSource(19700177337) // 16306
           // // TEMP
         } else {
-          this.searches = response.results
+          this.searchesCompleted = response.results
         }
       } else {
         this.errors.push(`Failed to retrieve existing search results`)
@@ -395,14 +409,14 @@ const app = createApp({
     },
 
     async fetchNewSearchResults(query, categories=null) {
-      // Reset state of search results
-      this.resetSearchResults()
       // Fetch data
       let data = {query: query, categories: categories} // if categories is null, all categories will be searched
       let response = await internalPost('/search', data)
       if (response) {
-        this.searchresults = response.results
-        this.setupSpokeNodes()
+        this.searchesPending.unshift({
+          ...response.search,
+          ...{'job_id': response.job.id},
+        })
       } else {
         this.errors.push(`Failed to retrieve new search results`)
       }
