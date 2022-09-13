@@ -41,6 +41,6 @@ $ pipenv shell
 ## **Run**
 To run locally:
 ```
-gunicorn project.wsgi -b localhost:5000 --reload
+gunicorn project.wsgi -b localhost:5001 --reload
 ```
 IMPORTANT: The Scopus API key must be set up to allow requests from localhost:5000

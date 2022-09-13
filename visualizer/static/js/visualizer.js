@@ -54,7 +54,8 @@ const app = createApp({
   //
 
   created: function() {
-    this.fetchOldSearchResults()
+    this.fetchSearchResults()
+    this.fetchSearchResults({pending: true})
     this.fetchSubjectAreaClassifications()
     // // TEMP
     // this.search = {
@@ -126,10 +127,10 @@ const app = createApp({
         if (newSearch.query != (oldSearch && oldSearch.query) || newSearch.id != (oldSearch && oldSearch.id)) {
           if (newSearch.id) {
             console.log('search(): fetch old search results', newSearch.id)
-            this.fetchOldSearchResults(newSearch.id)
+            this.fetchSearchResults({searchId: newSearch.id})
           } else {
             console.log('search(): fetch new search results', newSearch.query)
-            this.fetchNewSearchResults(newSearch.query) // for now, implicitly search all categories
+            this.initiateNewSearch(newSearch.query) // for now, implicitly search all categories
           }
         }
       }
@@ -183,9 +184,18 @@ const app = createApp({
       if (search.all_categories) {
         return '{all}'
       } else if (categories) {
-        // if less than 5, return all; otherwise, return first 3 (TODO: provide tooltip to view full list)
+        // If less than 5, return all; otherwise, return first 3
+        // TODO: provide tooltip to view full list
         return categories.length <= 5 ? categories.join(', ') : `${categories.slice(0,3).join(', ')}, ...`
       }
+    },
+
+    formatDate(dateStr) {
+      if (dateStr) {
+        let date = new Date(dateStr)
+        return Intl.DateTimeFormat('en', { dateStyle: "medium", timeStyle: "medium" }).format(date)
+      }
+      return null
     },
 
     categoryName(category) {
@@ -386,11 +396,14 @@ const app = createApp({
       }
     },
 
-    async fetchOldSearchResults(searchId=null) {
+    async fetchSearchResults(opts={}) {
+      // Unpack options
+      let searchId = opts.searchId || null
+      let pending = opts.pending || false
       // Reset state of search results (if we're fetching a specific set of search results)
       if (searchId) this.resetSearchResults()
       // Fetch data
-      let response = await internalGet('/search-results' + (searchId ? `/${searchId}` : ''))
+      let response = await internalGet('/search-results' + (searchId ? `/${searchId}` : '') + (pending ? `?pending=true` : ''))
       if (response) {
         if (searchId) {
           this.searchResults = response.results
@@ -400,6 +413,8 @@ const app = createApp({
           // this.enterClassification(1710) // 3315
           // this.enterSource(19700177337) // 16306
           // // TEMP
+        } else if (pending) {
+          this.searchesPending = response.results
         } else {
           this.searchesCompleted = response.results
         }
@@ -408,15 +423,12 @@ const app = createApp({
       }
     },
 
-    async fetchNewSearchResults(query, categories=null) {
+    async initiateNewSearch(query, categories=null) {
       // Fetch data
       let data = {query: query, categories: categories} // if categories is null, all categories will be searched
       let response = await internalPost('/search', data)
       if (response) {
-        this.searchesPending.unshift({
-          ...response.search,
-          ...{'job_id': response.job.id},
-        })
+        this.searchesPending.unshift(response.search)
       } else {
         this.errors.push(`Failed to retrieve new search results`)
       }

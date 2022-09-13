@@ -27,16 +27,16 @@
     <div v-else-if="searchResults">
         <!-- Breadcrumbs -->
         <div v-if="source">
-            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ categoryName(category) }</a> > <a @click="exitSource">${ classificationName(classification) }</a> > ${ sourceName(source) }
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">"${ search.query }"</a> > <a @click="exitClassification">${ categoryName(category) }</a> > <a @click="exitSource">${ classificationName(classification) }</a> > ${ sourceName(source) }
         </div>
         <div v-else-if="classification">
-            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > <a @click="exitClassification">${ categoryName(category) }</a> > ${ classificationName(classification) }
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">"${ search.query }"</a> > <a @click="exitClassification">${ categoryName(category) }</a> > ${ classificationName(classification) }
         </div>
         <div v-else-if="category">
-            <a @click="exitSearch">search</a> > <a @click="exitCategory">${ search.query }</a> > ${ categoryName(category) }
+            <a @click="exitSearch">search</a> > <a @click="exitCategory">"${ search.query }"</a> > ${ categoryName(category) }
         </div>
         <div v-else>
-            <a @click="exitSearch">search</a> > ${ search.query }
+            <a @click="exitSearch">search</a> > "${ search.query }"
         </div>
 
         <!-- Errors -->
@@ -134,18 +134,20 @@
 
         <!-- Pending searches -->
         <div class="p10 pb20 bgLight">
-            <div class="mt10 mb10 fwBold">Pending Search Results:</div>
+            <div class="mt10 mb10 fwBold">Pending Searches:</div>
             <table v-if="searchesPending.length">
                 <tr>
                     <td class="pr20">Query</td>
                     <td class="pr20">Categories</td>
-                    <td class="pr20">Started At</td>
+                    <td class="pr20">Job Queued At</td>
+                    <td class="pr20">Job Status</td>
                     <td class="pr20">Progress</td>
                 </tr>
                 <tr v-for="search in searchesPending">
                     <td class="pr20">${ search.query }</td>
                     <td class="pr20">${ getCategoriesDisplay(search) }</td>
-                    <td class="pr20">${ search.started_at }</td> <!-- TODO: make datetime look pretty -->
+                    <td class="pr20">${ formatDate(search.job.enqueued_at) }</td>
+                    <td class="pr20">${ search.job.status }</td>
                     <td class="pr20">${ search.finished_categories.length} of ${search.categories.length} categories</td>
                 </tr>
             </table>
@@ -156,7 +158,7 @@
 
         <!-- Completed searches -->
         <div class="p10 pb20">
-            <div class="mt10 mb10 fwBold">Completed Search Results:</div>
+            <div class="mt10 mb10 fwBold">Completed Searches:</div>
             <table v-if="searchesCompleted.length">
                 <tr>
                     <td class="pr20">Query</td>
@@ -166,7 +168,7 @@
                 <tr v-for="search in searchesCompleted">
                     <td class="pr20"><a @click.prevent="selectSearch(search)">${ search.query }</a></td>
                     <td class="pr20">${ getCategoriesDisplay(search) }</td>
-                    <td class="pr20">${ search.finished_at }</td> <!-- TODO: make datetime look pretty -->
+                    <td class="pr20">${ formatDate(search.finished_at) }</td>
                 </tr>
             </table>
             <div v-else>

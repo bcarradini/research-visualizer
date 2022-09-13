@@ -11,7 +11,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
 # Internal
-from project.worker import queue_job
+from project.worker import queue_job, get_pending_jobs
 from visualizer.models import (
     ScopusClassification,
     ScopusSource,
@@ -61,7 +61,7 @@ def search(request):
     job, search = _search(body['query'], body.get('categories'))
 
     # Respond with job ID and search ID
-    return JsonResponse({'job': {'id': job.id}, 'search': _serialize_search(search)}, status=200)
+    return JsonResponse({'search': _serialize_search_job(job, search)}, status=200)
 
 
 @require_GET
@@ -69,19 +69,29 @@ def search_results(request, search_id=None):
     """TODO: comments"""
     response = {}
 
-    # TODO: comment
+    # If results for a specific search have been requested, return those search results
     if search_id:
         search = _get_search(search_id) # will raise if search is not found
         response = {
             'results': get_search_results(search.query, search_id=search.id)
         }
-
-    # TODO: comment
     else:
-        searches = Search.objects.filter(finished=True, deleted=False).order_by('query', '-created')
-        response = {
-            'results': [_serialize_search(search) for search in searches]
-        }
+        # Unpack query params
+        pending = request.GET.get('pending') in ['true', 'True', True]
+
+        # If pending results have been requested, return a list of search results that are pending
+        if pending:
+            jobs = get_pending_jobs()
+            response = {
+                'results': _serialize_search_jobs(jobs)
+            }
+
+        # Otherwise, return a list of search results that are ready (search is finished)
+        else:
+            searches = Search.objects.filter(finished=True, deleted=False).order_by('query', '-created')
+            response = {
+                'results': [_serialize_search(search) for search in searches]
+            }
 
     return JsonResponse(response, status=200)
 
@@ -233,5 +243,27 @@ def _serialize_search(search):
         'finished_categories': search.context[FINISHED_CATEGORIES],
         'finished': search.finished,
         'finished_at': last_finished_category and last_finished_category.modified, # TODO: improve hack
-        'started_at': search.created,
+        'created_at': search.created,
     }
+
+def _serialize_job(job):
+    return {
+        'id': job.id,
+        'status': job.get_status(),
+        'enqueued_at': job.enqueued_at,
+        'started_at': job.started_at,
+    }
+
+def _serialize_search_job(job, search=None):
+    # TODO: Improve hack. Record the job ID on the search object instead of assuming the job's third arg is the search ID
+    search = search or Search.objects.filter(finished=False, deleted=False).filter(id=job.args[2]).first()
+    if search:
+        search = _serialize_search(search)
+        search['job'] = _serialize_job(job)
+        return search
+    return None
+
+def _serialize_search_jobs(jobs):
+    return list(
+        filter(lambda j: j, [_serialize_search_job(job) for job in jobs if job.func == get_search_results])
+    )

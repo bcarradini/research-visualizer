@@ -48,6 +48,11 @@ def worker():
     print(f"worker(): exit")
 
 
+def get_workers():
+    q = Queue(connection=_get_redis_conn())
+    return Worker.all(queue=q)
+
+
 def queue_job(f, *args, **kwargs):
     """Queue job for worker."""
     print(f"queue_job(): {f}: {args}, {kwargs}")
@@ -59,3 +64,15 @@ def queue_job(f, *args, **kwargs):
     print(f"queue_job(): {f}: {job.id}")
 
     return job
+
+
+def get_pending_jobs():
+    """Return list of rq Job objects that are still in queue or that are being executed by the worker."""
+    q = Queue(connection=_get_redis_conn())
+
+    # Get current job from worker (may be None)
+    current_jobs = [worker.get_current_job() for worker in get_workers()]
+
+    # Return any jobs in the queue + the current job (if not None)
+    return q.jobs + [job for job in current_jobs if job]
+

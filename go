@@ -3,4 +3,4 @@
 printf "\n\n\nrunning\n"
 echo "    gunicorn project.wsgi -b localhost:5000 --reload"
 echo
-gunicorn project.wsgi -b localhost:5000 --reload
+gunicorn project.wsgi -b localhost:5001 --reload
