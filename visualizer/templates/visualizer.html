@@ -52,15 +52,10 @@
             <div v-if="classificationEntries">
                 <table>
                     <tr>
-                        <td>Document Type</td>
                         <td>Title</td>
                         <td>First Author</td>
                     </tr>
                     <tr v-for="entry in classificationEntries" :key="entry.scopus_id" @click="enterEntry(entry)">
-                        <td>
-                            <!-- TODO: Translate to human-readable -->
-                            ${entry.document_type}
-                        </td>
                         <td>
                             ${entry.title}
                         </td>
