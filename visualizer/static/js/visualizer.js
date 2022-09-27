@@ -106,10 +106,12 @@ const app = createApp({
           // If node is not the hub node (''), process click event
           if (event.node != '') {
             let node = this.spokeNodes.find(n => n.nodeId == event.node)
-            if (this.category) {
-              this.enterClassification(node.vizId) // vizId will be the classification code
-            } else if (this.search) {
-              this.enterCategory(node.vizId) // node.vizId will be the category abbreviation
+            if (node.name != '0') { // block clicks for 0-count nodes
+              if (this.category) {
+                this.enterClassification(node.vizId) // vizId will be the classification code
+              } else if (this.search) {
+                this.enterCategory(node.vizId) // node.vizId will be the category abbreviation
+              }              
             }
           }
         },
