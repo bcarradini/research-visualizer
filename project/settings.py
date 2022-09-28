@@ -32,7 +32,7 @@ assert _prod or _dev
 if _prod:
     BASE_URL = 'https://research-visualizer.herokuapp.com/'
 else:
-    BASE_URL = 'http://localhost:5000'
+    BASE_URL = 'http://localhost:5001'
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -130,11 +130,11 @@ CONTEXT_SETTINGS = ('DEBUG', 'ENVIRONMENT', 'BASE_URL')
 if _prod:
     DATABASES = dict() # stub out
     DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
-    DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 else:
     DATABASES = {
         'default': {
-            'ENGINE' : 'django.contrib.gis.db.backends.postgis',
+            'ENGINE' : 'django.db.backends.postgresql',
             'NAME': 'resviz',
             'USER': os.getlogin(), # default to login name for the machine,
             'HOST': '127.0.0.1',
