@@ -260,9 +260,7 @@ def _search_category_entries(search, category):
     print(f"_search_category_entries(): INFO: {search.query}, {category}, cursor {page_cursor}")
 
     # Assemble query URL without pagination markers
-    print(f"TEMP: _search_category_entries(): search.scopus_query = {search.scopus_query}")
     query_url = f'{ELSEVIER_BASE_URL}/content/search/scopus?query=ABS({search.scopus_query}) AND SUBJAREA({category}) AND DOCTYPE({DOCTYPES_QUERY})'
-    print(f"TEMP: _search_category_entries(): query_url = {query_url}")
 
     #
     # -- Paginate through Scopus search results
