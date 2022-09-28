@@ -9,10 +9,14 @@
 
 /* SVG */
 svg.v-canvas {
-  /* Because we don't want to use the mouse wheel to zoom the network graphs, and because
-   * the graphs are rendered as SVGs; disable pointer event capture for v-canvas SVGs 
-   */
+  /* Don't allow the v-network-graph canvas to capture pointer events; the graphs are large and we
+   * want to use the mouse wheel to scroll the page, not zoom the graph. */
   pointer-events: none;
+}
+g.v-node {
+  /* Specifically allow v-network-graph nodes to capture pointer events, so that the user can click
+     through the search results from higher-level graph to lower-level graph. */
+  pointer-events: all;
 }
 
 /* Font */
