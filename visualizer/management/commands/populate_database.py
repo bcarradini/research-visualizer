@@ -12,6 +12,8 @@ from django.core.management.base import BaseCommand
 from visualizer.models import ScopusClassification, ScopusSource
 from visualizer.scopus import get_subject_area_classifications
 
+from argparse import RawTextHelpFormatter
+
 # Constants
 CSV_FILEPATH = './visualizer/static/data/scopus_sources.csv'
 SOURCE_ID_COLUMN_NAME = 'Sourcerecord ID' # journal identifier within scopus
@@ -21,16 +23,21 @@ E_ISSN_COLUMN_NAME = 'E-ISSN'
 CLASSIFICATION_COLUMN_NAME = 'All Science Journal Classification Codes (ASJC)' # list of comma-separated classification codes
 
 class Command(BaseCommand):
-    help = ('''
-        To use this script:
-          1. Download the latest scopus source list from https://www.scopus.com, which will be an Excel spreadsheet.
-          2. Convert the first tab of the spreadsheet (e.g. "Scopus Sources October 2021") to CSV format.
-          3. Place CSV file at `visualizer/static/data/scopus_sources.csv` within this project.
-          4. Execute management script, `python manage.py populate_database --execute`.
-          5. If you encounter trouble parsing the script:
-              a. Make sure the constants defined at the top of this file still align with the column names in the latest source list.
-              b. Make sure the `encoding` specified when opening the CSV file aligns with how the CSV file was generated (utf-8? utf-8-sig? etc).
-    ''')
+    help = '''
+How To:
+  1. Download the latest scopus source list from https://www.scopus.com, which will be an Excel spreadsheet.
+  2. Convert the first tab of the spreadsheet (e.g. "Scopus Sources October 2021") to CSV format.
+  3. Place CSV file at `visualizer/static/data/scopus_sources.csv` within this source code repository.
+  4. Execute this management script: `python manage.py populate_database --execute`.
+  5. If you encounter trouble parsing the CSV file:
+      a. Make sure the constants defined at the top of this file still align with the column names in the latest source list.
+      b. Make sure the `encoding` specified when opening the CSV file aligns with how the CSV file was generated (utf-8? utf-8-sig? etc).
+    '''
+
+    def create_parser(self, * args, ** kwargs):
+        parser = super(Command, self).create_parser( * args, ** kwargs)
+        parser.formatter_class = RawTextHelpFormatter # respect line breaks in help text
+        return parser
 
     def add_arguments(self, parser):
         # Named (optional) arguments

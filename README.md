@@ -1,3 +1,4 @@
+
 # research-visualizer
 Visualize research topics across [Scopus subject area classifications](https://service.elsevier.com/app/answers/detail/a_id/14882/supporthub/scopus/~/what-are-the-most-frequent-subject-area-categories-and-classifications-used-in/).
 
@@ -72,10 +73,17 @@ source ~/.zshrc
 ```
 _Note_: `gh` is the GitHub CLI, which you may or may not already have installed. If you're already set up to interact with github.com from your command line, great! If not, use `gh auth login` and follow the prompts to login in to your GitHub account so that you can clone the source code repository.
 
-### Create PSQL Database
-Run PSQL command to create a local database:
+
+### Create Database
+Create a PostgreSQL database named "resviz"
 ```
-$ createdb resviz
+# Create database
+createdb resviz
+
+# Make sure you can connect to the database
+psql resviz
+
+# Use "\q" to exit the psql interface after successfully connecting
 ```
 
 
@@ -100,10 +108,11 @@ pipenv shell
 ```
 _Note_: From here on out, you should assume that any instructions should be carried out **only after** you have navigated to the root of the local source code repository and activated the virtual environment
 
+
 ### Install project dependencies
 Navigate to the root of the local source code repository, then install project dependencies:
 ```
-# Activate virtual environment
+# Activate virtual environment (if you haven't done so already)
 pipenv shell
 
 # From within the activated virtual environment, install Python dependencies
@@ -124,11 +133,33 @@ os.environ['SCOPUS_INST_TOKEN'] = 'YOUR_SCOPUS_INST_TOKEN'
 ```
 _Note_: Both the Scopus API Key and the Insttoken are expected to be 32-character hex strings (e.g. "0123456789ab4567cdef0123456789yz")
 
+
+### Populate Database
+Navigate to the root of the local source code repository, then:
+```
+# Activate virtual environment (if you haven't done so already)
+pipenv shell
+
+# Migrate the database to setup required tables and relationships
+python manage.py migrate
+```
+Now, populate the database with information about Scopus Sources (journals) and Classification codes by following these instructions:
+1. Download the latest scopus source list from https://www.scopus.com, which will be an Excel spreadsheet.
+2. Convert the first tab of the spreadsheet (e.g. "Scopus Sources October 2021") to CSV format.
+3. Place CSV file at `visualizer/static/data/scopus_sources.csv` within the local source code repository.
+4. Execute script from within the local source code repository: `python manage.py populate_database --execute`.
+5. If the script cannot parse the CSV file:
+  a. Make sure the constants defined at the top of the `populate_database` script still align with the column names in the latest source list.
+  b. Make sure the `encoding` specified when opening the CSV file aligns with how the CSV file was generated (utf-8? utf-8-sig? etc).
+
+_Note_: The above instructions are also available by executing `python manage.py populate_database --help`
+
+
 ## Run
 
 Navigate to the root of the local source code repository, then start the HTTP server:
 ```
-# Activate virtual environment
+# Activate virtual environment (if you haven't done so already)
 pipenv shell
 
 # Start the HTTP server using the "go" executable, which is a wrapper for "gunicorn project.wsgi -b localhost:5001 --reload"
@@ -137,7 +168,7 @@ pipenv shell
 
 In a _separate_ terminal, navigate to the root of the local source code repository, then start the async worker process:
 ```
-# Activate virtual environment
+# Activate virtual environment (if you haven't done so already)
 pipenv shell
 
 # Start the async worker process
@@ -145,3 +176,21 @@ pipenv shell
 ```
 
 Once the HTTP server is running and the worker is running, open a browser and navigate to http://localhost:5001/ to access the front page of the research visualizer.
+
+
+## Troubleshoot
+
+### Worker process crashes when search job is queued
+This is what it looks like:
+```
+objc[61078]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called.
+objc[61078]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint on objc_initializeAfterForkError to debug.
+```
+This is how to workaround the problem:
+```
+# Edit ~/.zshrc
+echo 'export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES' >> ~/.zshrc
+
+# Apply edited ~/.zshrc directives without having to restart your terminal
+source ~/.zshrc
+```

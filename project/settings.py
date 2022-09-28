@@ -109,7 +109,6 @@ WSGI_APPLICATION = 'project.wsgi.application'
 
 # Local settings
 try: 
-    # TODO: rename 'local_settings' as 'local_env'?
     from .local_settings import *
     sys.stderr.write('local_settings imported\n')
 except ImportError as e:
@@ -222,6 +221,5 @@ django_heroku.settings(locals())
 #
 # Summarize
 #
-sys.stderr.write('in summary:\n')
-sys.stderr.write(f'    ENVIRONMENT={ENVIRONMENT}\n')
-sys.stderr.write(f'    DEBUG={DEBUG}\n')
+sys.stderr.write(f'  ENVIRONMENT={ENVIRONMENT}\n')
+sys.stderr.write(f'  DEBUG={DEBUG}\n')
