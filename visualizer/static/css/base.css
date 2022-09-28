@@ -7,6 +7,14 @@
   display: none;
 }
 
+/* SVG */
+svg.v-canvas {
+  /* Because we don't want to use the mouse wheel to zoom the network graphs, and because
+   * the graphs are rendered as SVGs; disable pointer event capture for v-canvas SVGs 
+   */
+  pointer-events: none;
+}
+
 /* Font */
 .fwBold {
   font-weight: bold;
