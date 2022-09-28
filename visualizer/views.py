@@ -8,6 +8,7 @@ import json
 from django.db.models import Count, F
 from django.http import JsonResponse, Http404
 from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 # Internal
@@ -191,6 +192,7 @@ def subject_area_classifications(request):
     return JsonResponse({'categories': categories, 'classifications': classifications}, status=200)
 
 
+@ensure_csrf_cookie
 def visualizer(request):
     """Returned rendered visualizer template."""
     return render(request, "visualizer.html", context={})
