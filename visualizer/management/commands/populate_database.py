@@ -28,8 +28,8 @@ How To:
   1. Download the latest scopus source list from https://www.scopus.com, which will be an Excel spreadsheet.
   2. Convert the first tab of the spreadsheet (e.g. "Scopus Sources October 2021") to CSV format.
   3. Place CSV file at `visualizer/static/data/scopus_sources.csv` within this source code repository.
-  4. Execute this management script: `python manage.py populate_database --execute`.
-  5. If you encounter trouble parsing the CSV file:
+  4. Execute this script: `python manage.py populate_database --execute`.
+  5. If the script cannot parse the CSV file:
       a. Make sure the constants defined at the top of this file still align with the column names in the latest source list.
       b. Make sure the `encoding` specified when opening the CSV file aligns with how the CSV file was generated (utf-8? utf-8-sig? etc).
     '''

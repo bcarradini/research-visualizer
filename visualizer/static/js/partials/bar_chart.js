@@ -90,10 +90,19 @@ const BarChart = {
       }
     },
     width() {
-      let bars = this.chartData.labels.length
-      return this.chartPadding.left + this.chartPadding.right + (bars * this.barThickness*1.5)
+      // Count the number of bars that will be in the chart
+      let barCount = this.chartData.labels.length
+
+      // Calculate a multiplier to adjust width of chart based on number of bars. Charts with fewer
+      // bars need a bigger multipler; otherwise, the chart elements will be too squeezed together
+      // and will be unreadable.
+      let multiplier = Math.max(1.5, (1/barCount) * 50)
+
+      // Return width for chart (left padding + right padding + space for bars)
+      return this.chartPadding.left + this.chartPadding.right + (barCount * this.barThickness * multiplier)
     },
     height() {
+      // Return height for chart
       return 800
     },
   },
