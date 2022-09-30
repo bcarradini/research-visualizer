@@ -378,11 +378,12 @@ def _create_search_result_entry(search, category, url, entry):
                 publication_name=entry.get('prism:publicationName'),
                 scopus_source=ScopusSource.objects.filter(source_id=entry['source-id']).first(),
             )
-        except IntegrityError:
-            # We get here if the creation attempt violates the following unique constraint:
-            #     unique_together = [('search', 'category_abbr', 'scopus_id')]
-            # We ignore this error because the document has already been recorded in the
-            # search results for this category. Let's get on with life.
+        except (IntegrityError, KeyError):
+            # 1. We get here if the creation attempt violates the following unique constraint:
+            #      unique_together = [('search', 'category_abbr', 'scopus_id')]
+            #    We ignore this error because the document has already been recorded in the
+            #    search results for this category. Let's get on with life.
+            # 2. We get here if dc:title or source-id are missing; skip entry
             pass
 
     except Exception as exc:
