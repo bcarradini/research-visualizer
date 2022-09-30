@@ -4,7 +4,7 @@ import { createApp, nextTick } from 'vue'
 import VNetworkGraph from 'v-network-graph'
 
 // Internal
-import {internalGet, internalPost} from './api'
+import {internalDelete, internalGet, internalPost} from './api'
 import NetworkGraph from './partials/network_graph'
 import BarChart from './partials/bar_chart'
 
@@ -126,14 +126,12 @@ const app = createApp({
   watch: {
     search(newSearch, oldSearch) {
       if (newSearch) {
-        if (newSearch.query != (oldSearch && oldSearch.query) || newSearch.id != (oldSearch && oldSearch.id)) {
-          if (newSearch.id) {
-            console.log('search(): fetch old search results', newSearch.id)
-            this.fetchSearchResults({searchId: newSearch.id})
-          } else {
-            console.log('search(): fetch new search results', newSearch.query)
-            this.initiateNewSearch(newSearch.query) // for now, implicitly search all categories
-          }
+        if (newSearch.id && newSearch.id != (oldSearch && oldSearch.id)) {
+          console.log('search(): fetch old search results', newSearch.id)
+          this.fetchSearchResults({searchId: newSearch.id})
+        } else {
+          console.log('search(): fetch new search results', newSearch.query)
+          this.startSearch(newSearch.query) // for now, implicitly search all categories
         }
       }
     }
@@ -153,6 +151,19 @@ const app = createApp({
     initiateSearch() {
       this.search = {
         'query': (this.query || '').trim()
+      }
+    },
+
+    async deleteSearch(searchId) {
+      // Reset state of search results (if we're fetching a specific set of search results)
+      if (searchId == null) return
+      // Delete search
+      let response = await internalDelete(`/search-results/${searchId}`)
+      if (response && response.deleted) {
+        this.searchesPending = this.searchesPending.filter(s => s.id != searchId)
+        this.searchesCompleted = this.searchesCompleted.filter(s => s.id != searchId)
+      } else {
+        this.errors.push(`Failed to delete search`)
       }
     },
 
@@ -425,12 +436,24 @@ const app = createApp({
       }
     },
 
-    async initiateNewSearch(query, categories=null) {
+    async startSearch(query, categories=null) {
       // Fetch data
       let data = {query: query, categories: categories} // if categories is null, all categories will be searched
       let response = await internalPost('/search', data)
       if (response) {
         this.searchesPending.unshift(response.search)
+      } else {
+        this.errors.push(`Failed to retrieve new search results`)
+      }
+    },
+
+    async restartSearch(searchId) {
+      // Restart stalled search
+      let response = await internalPost(`/search/${searchId}/restart`, {})
+      if (response) {
+        this.searchesPending = this.searchesPending.map(search => {
+          return (search.id == searchId) ? response.search : search
+        })
       } else {
         this.errors.push(`Failed to retrieve new search results`)
       }

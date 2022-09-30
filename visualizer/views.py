@@ -6,10 +6,10 @@ import json
 
 # 3rd party
 from django.db.models import Count, F
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponseNotAllowed
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 
 # Internal
 from project.worker import queue_job, get_pending_jobs
@@ -65,26 +65,56 @@ def search(request):
     return JsonResponse({'search': _serialize_search_job(job, search)}, status=200)
 
 
-@require_GET
+@require_POST
+def search_restart(request, search_id):
+    """TODO: comment"""
+    # Launch asynchronous search
+    job, search = _search_restart(search_id)
+
+    # Respond with job ID and search ID
+    return JsonResponse({'search': _serialize_search_job(job, search)}, status=200)
+
+
+@require_http_methods(['GET', 'DELETE'])
 def search_results(request, search_id=None):
     """TODO: comments"""
     response = {}
 
-    # If results for a specific search have been requested, return those search results
+    # If request is for a specific set of search results:
     if search_id:
-        search = _get_search(search_id) # will raise if search is not found
-        response = {
-            'results': get_search_results(search.query, search_id=search.id)
-        }
-    else:
+        # Handle DELETE request
+        if request.method == 'DELETE':
+            search = Search.objects.get(id=search_id)
+            search.deleted = True
+            search.save()
+            response = {
+                'deleted': True,
+            }
+        # Handle GET request
+        else:
+            search = _get_search(search_id)
+            response = {
+                'results': get_search_results(search.query, search_id=search.id)
+            }
+
+    # If request is for all search results:
+    elif request.method == 'GET':
         # Unpack query params
         pending = request.GET.get('pending') in ['true', 'True', True]
 
         # If pending results have been requested, return a list of search results that are pending
         if pending:
-            jobs = get_pending_jobs()
+            # Get pending jobs and serialize those pending searches
+            pending_jobs = get_pending_jobs()
+            pending_searches = _serialize_search_jobs(pending_jobs)
+            pending_search_ids = [s['id'] for s in pending_searches]
+
+            # In case of a worker malfunction, get unfinished searches that aren't associated with pending jobs
+            stalled_searches = Search.objects.filter(finished=False, deleted=False).exclude(id__in=pending_search_ids)
+            stalled_searches = [_serialize_search(search) for search in stalled_searches]
+
             response = {
-                'results': _serialize_search_jobs(jobs)
+                'results': sorted(pending_searches + stalled_searches, key=lambda s: s['created_at'], reverse=True)
             }
 
         # Otherwise, return a list of search results that are ready (search is finished)
@@ -93,6 +123,8 @@ def search_results(request, search_id=None):
             response = {
                 'results': [_serialize_search(search) for search in searches]
             }
+    else:
+        raise HttpResponseNotAllowed(f"Method not allowed for listing endpoint")
 
     return JsonResponse(response, status=200)
 
@@ -207,14 +239,22 @@ def _search(query, categories=None):
     """Private handler for public `search()` view. See that function for more details. This is for
     testing convenience, so that async jobs can be queued without an HTTP request being involved.
     """
-    search_obj = Search.init_search(query, categories)
-    job = queue_job(get_search_results, args=(query, categories, search_obj.id), job_timeout=12*60*60)
-    return (job, search_obj)
+    search = Search.init_search(query, categories)
+    job = queue_job(get_search_results, args=(query, categories, search.id), job_timeout=12*60*60)
+    return (job, search)
 
-def _get_search(search_id):
+def _search_restart(search_id):
+    """Private handler for public `search_restart()` view. See that function for more details. This is for
+    testing convenience, so that async jobs can be queued without an HTTP request being involved.
+    """
+    search = _get_search(search_id, finished=False)
+    job = queue_job(get_search_results, args=(search.query, None, search.id), job_timeout=12*60*60)
+    return (job, search)
+
+def _get_search(search_id, finished=True):
     """TODO: comment"""
     try:
-        return Search.objects.filter(finished=True, deleted=False).get(id=search_id)
+        return Search.objects.filter(finished=finished, deleted=False).get(id=search_id)
     except:
         raise Http404(f"Search not found, {search_id}")
 

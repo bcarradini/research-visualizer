@@ -7,6 +7,11 @@
   display: none;
 }
 
+/* Links */
+a:hover {
+  cursor:pointer;
+}
+
 /* SVG */
 svg.v-canvas {
   /* Don't allow the v-network-graph canvas to capture pointer events; the graphs are large and we
@@ -48,7 +53,7 @@ g.v-node {
   background-color: #f5f5f5;
 }
 .bgMid {
-  background-color: #e0e0e0;
+  background-color: #d0d0d0;
 }
 .bgDrk {
   background-color: #333333;
@@ -82,6 +87,15 @@ g.v-node {
 .btn {
   vertical-align: bottom !important;
   padding: 2px 12px !important;
+}
+.btnMin {
+  vertical-align: bottom !important;
+  padding: 0px 12px !important;
+  margin-top: 2px !important;
+}
+.btnMid {
+  background-color: #d0d0d0;
+  color: #333333;
 }
 .btnDrk {
   background-color: #333333;

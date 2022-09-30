@@ -128,22 +128,26 @@
         </div>
 
         <!-- Pending searches -->
-        <div class="p10 pb20 bgLight">
+        <div class="p10 pb20">
             <div class="mt10 mb10 fwBold">Pending Searches:</div>
             <table v-if="searchesPending.length">
                 <tr>
-                    <td class="pr20">Query</td>
-                    <td class="pr20">Categories</td>
-                    <td class="pr20">Job Queued At</td>
-                    <td class="pr20">Job Status</td>
-                    <td class="pr20">Progress</td>
+                    <td class="pr20 fwBold" style="min-width: 500px">Query</td>
+                    <td class="pr20 fwBold">Categories</td>
+                    <td class="pr20 fwBold">Job Queued At</td>
+                    <td class="pr20 fwBold">Job Status</td>
+                    <td class="pr20 fwBold">Progress</td>
+                    <td class="pr20 fwBold"></td>
+                    <td class="pr20 fwBold"></td>
                 </tr>
-                <tr v-for="search in searchesPending">
+                <tr v-for="(search, index) in searchesPending" :key="search.id" :class="{ bgLight: index % 2 == 0 }">
                     <td class="pr20">${ search.query }</td>
                     <td class="pr20">${ getCategoriesDisplay(search) }</td>
-                    <td class="pr20">${ formatDate(search.job.enqueued_at) }</td>
-                    <td class="pr20">${ search.job.status }</td>
+                    <td class="pr20">${ search.job ? formatDate(search.job.enqueued_at) : ""}</td>
+                    <td class="pr20">${ search.job ? search.job.status : "stalled"}</td>
                     <td class="pr20">${ search.finished_categories.length} of ${search.categories.length} categories</td>
+                    <td class="pr20"><a @click.prevent="deleteSearch(search.id)">Delete</a></td>
+                    <td class="pr20"><a @click.prevent="restartSearch(search.id)" v-if="!search.job">Restart</a></td>
                 </tr>
             </table>
             <div v-else>
@@ -156,14 +160,16 @@
             <div class="mt10 mb10 fwBold">Completed Searches:</div>
             <table v-if="searchesCompleted.length">
                 <tr>
-                    <td class="pr20">Query</td>
-                    <td class="pr20">Categories</td>
-                    <td class="pr20">Finished At</td>
+                    <td class="pr20 fwBold" style="min-width: 500px">Query</td>
+                    <td class="pr20 fwBold">Categories</td>
+                    <td class="pr20 fwBold">Finished At</td>
+                    <td class="pr20 fwBold"></td>
                 </tr>
-                <tr v-for="search in searchesCompleted">
+                <tr v-for="(search, index) in searchesCompleted" :key="search.id" :class="{ bgLight: index % 2 == 0 }">
                     <td class="pr20"><a @click.prevent="selectSearch(search)">${ search.query }</a></td>
                     <td class="pr20">${ getCategoriesDisplay(search) }</td>
                     <td class="pr20">${ formatDate(search.finished_at) }</td>
+                    <td class="pr20"><a @click.prevent="deleteSearch(search.id)">Delete</a></td>
                 </tr>
             </table>
             <div v-else>

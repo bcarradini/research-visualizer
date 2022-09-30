@@ -56,3 +56,24 @@ export async function internalPost(url, payload) {
     console.error('internalPost(): ERROR:', url, error)
   }
 }
+
+export async function internalDelete(url) {
+  if (apiDebug) console.log('internalDelete():', url)
+
+  // Make DELETE request
+  try {
+    return await $.ajax({
+      type: 'DELETE',
+      url: url,
+      headers: _assembleHeaders(),
+      dataType: 'json',
+      contentType : 'application/json',
+    })
+    .done(function(data) {
+      if (apiDebug) console.log('internalDelete(): SUCCESS:', url, data)
+      return data
+    })
+  } catch (error) {
+    console.error('internalDelete(): ERROR:', url, error)
+  }
+}

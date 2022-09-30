@@ -8,6 +8,7 @@ from django.urls import path, include
 from visualizer.views import (
     abstract,
     search,
+    search_restart,
     search_results,
     search_result_entries,
     search_result_sources,
@@ -20,6 +21,7 @@ from visualizer.views import (
 urlpatterns = [
     path('abstract/<int:scopus_id>', abstract, name='abstract'),
     path('search', search, name='search'),
+    path('search/<int:search_id>/restart', search_restart, name='search_restart'),
     path('search-results', search_results, name='search_results'),
     path('search-results/<int:search_id>', search_results, name='search_results'),
     path('search-results/<int:search_id>/sources', search_result_sources, name='search_result_sources'),
