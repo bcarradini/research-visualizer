@@ -230,6 +230,10 @@ const app = createApp({
       return sourceId
     },
 
+    getJobStatus(search) {
+      return search.job ? search.job.status : "stalled"
+    },
+
     // 
     // -- Network graph nodes
     // 
@@ -403,7 +407,7 @@ const app = createApp({
     // 
 
     async fetchSubjectAreaClassifications() {
-      let response = await internalGet('/subject-area-classifications')
+      let response = await internalGet('/subject-area-classifications?cached=true')
       if (response) {
         this.categories = response.categories
       }

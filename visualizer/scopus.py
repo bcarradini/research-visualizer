@@ -69,9 +69,7 @@ def get_abstract(scopus_id):
     """
     # Request Scopus abstract
     url = f'{ELSEVIER_BASE_URL}/content/abstract/scopus_id/{scopus_id}'
-    print(f"TEMP: abstract(): url = {url}")
     response = requests.get(url, headers=ELSEVIER_HEADERS)
-    print(f"TEMP: abstract(): response = {response}")
 
     # Unpack abstract text
     try:
@@ -79,7 +77,6 @@ def get_abstract(scopus_id):
         if isinstance(description, str):
             abstract = description
         else:
-            print(f"TEMP: abstract(): description = {description}")
             abstract = description['abstract']['ce:para']
     except Exception as exc:
         print(f"get_abstract(): ERROR: {exc}, {url}, {response.json()}")

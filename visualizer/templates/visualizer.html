@@ -15,7 +15,7 @@
     <!------------->
 
     <template v-if="loadingPage">
-        <div class="p10 mt10">
+        <div class="p10">
             Loading...
         </div>
     </template>
@@ -24,7 +24,7 @@
     <!-- Search results -->
     <!-------------------->
 
-    <div v-else-if="searchResults">
+    <div v-else-if="searchResults" class="p10">
         <!-- Breadcrumbs -->
         <div v-if="source">
             <a @click="exitSearch">search</a> > <a @click="exitCategory">"${ search.query }"</a> > <a @click="exitClassification">${ categoryName(category) }</a> > <a @click="exitSource">${ classificationName(classification) }</a> > ${ sourceName(source) }
@@ -49,50 +49,34 @@
         <!-- Fourth-level search results: entries for classification & source -->
         <div v-if="source">
             <!-- TODO: Turn this into a component -->
-            <div v-if="classificationEntries">
+            <div v-if="classificationEntries" class="p10 pb20">
                 <table>
                     <tr>
-                        <td>Title</td>
-                        <td>First Author</td>
+                        <td class="tblCell fwBold">Title</td>
+                        <td class="tblCell fwBold">First Author</td>
                     </tr>
-                    <tr v-for="entry in classificationEntries" :key="entry.scopus_id" @click="enterEntry(entry)">
-                        <td>
-                            ${entry.title}
-                        </td>
-                        <td>
-                            ${entry.first_author}
-                        </td>
+                    <tr v-for="(entry, index) in classificationEntries" :key="entry.scopus_id" :class="{ bgLight: index % 2 == 0 }" @click="enterEntry(entry)">
+                        <td class="tblCell" style="max-width: 800px">${entry.title}</td>
+                        <td class="tblCell">${entry.first_author}</td>
                     </tr>
                 </table>
                 <div v-if="moreEntries" @click="fetchMoreSearchEntries">Load more entries</div>
             </div>
             <!-- Entry modal -->
             <div v-if="entry" class="posFixed fbColCtrCtr bgMask" style="z-index: 20000">
-                <div class="posRel bgMid" style="width: 100%; max-width: 640px; max-height: 100%;">
-                    <div @click="exitEntry">
-                        X
+                <div class="posRel bgMid p20 br10" style="width: 100%; max-width: 640px; max-height: 100%;">
+                    <div class="mb10">
+                        <div @click="exitEntry" style="position: relative; float: right; font-size: 20px;">&#10006;</div>
+                        <div class="fsEmph">${ entry.publication_name }</div>
+                        <div class="fwBold">${ entry.title }</div>
+                        <div>${ entry.first_author }</div>
                     </div>
-                    <div>
-                        ${ entry.publication_name }
+                    <div class="mb10">
+                        <div>DOI: <a :href="'https://doi.org/' + entry.doi" target="_blank">${ entry.doi }</a></div>
+                        <div>Scopus ID: ${ entry.scopus_id }</div>
                     </div>
-                    <div>
-                        ${ entry.title }
-                    </div>
-                    <div>
-                        ${ entry.first_author }
-                    </div>
-                    <div>
-                        ${ entry.document_type }
-                    </div>
-                    <div>
-                        DOI: ${ entry.doi }
-                    </div>
-                    <div>
-                        Scopus ID: ${ entry.scopus_id }
-                    </div>
-                    <div>
-                        ${ entry.abstract }
-                    </div>
+                    <div v-if="entry.abstract">${ entry.abstract }</div>
+                    <div v-else>Loading abstract...</div>
                 </div>
             </div>
         </div>
@@ -114,40 +98,41 @@
     <!---------------------->
 
     <template v-else>
-        <div class="p10 mt10">
+        <div class="p10" style="max-width: 980px;">
             <p>Enter a search query to generate new results or browse existing search results.</p>
-            <p class="ml10"><span class="fwBold">PRO TIP:</span> When exploring search results, don't use your browser's back button. Instead, use the breadcrumbs at the top of the page to navigate backward.</p>
-            <p class="ml10"><span class="fwBold">PRO TIP:</span> If pending searches don't seem to ever start, make sure the worker is running.</p>
+            <p class="ml10"><span class="fwBold">PRO TIP: </span>You can use a limited set of <span class="fwBold">case-sensitive</span> Boolean operators (AND, OR) in your search query (e.g. "social media AND influencer"). If you use more than one operator, your query will be interpreted according to the order of precedence described in the <a href="https://dev.elsevier.com/sc_search_tips.html" target="_blank">Scopus Search API Tips</a>.</p>
+            <p class="ml10"><span class="fwBold">PRO TIP: </span>When exploring search results, don't use your browser's back button. Instead, use the breadcrumbs at the top of the page to navigate backward.</p>
+            <p class="ml10"><span class="fwBold">PRO TIP: </span>If queued searches don't seem to ever start, make sure the worker is running.</p>
         </div>
 
         <!-- Search bar -->
         <div class="p10 pb20">
-            <div class="mt10 mb10 fwBold">New Search:</div>
+            <div class="mb10 fwBold">New Search:</div>
             <input v-model=query type="text" style="min-width:300px; max-width:600px;"></input>
             <a @click.prevent="initiateSearch" class="btn btnDrk ml10">Search</a>
         </div>
 
         <!-- Pending searches -->
         <div class="p10 pb20">
-            <div class="mt10 mb10 fwBold">Pending Searches:</div>
+            <div class="mb10 fwBold">Pending Searches:</div>
             <table v-if="searchesPending.length">
                 <tr>
-                    <td class="pr20 fwBold" style="min-width: 500px">Query</td>
-                    <td class="pr20 fwBold">Categories</td>
-                    <td class="pr20 fwBold">Job Queued At</td>
-                    <td class="pr20 fwBold">Job Status</td>
-                    <td class="pr20 fwBold">Progress</td>
-                    <td class="pr20 fwBold"></td>
-                    <td class="pr20 fwBold"></td>
+                    <td class="tblCell fwBold" style="min-width: 500px">Query</td>
+                    <td class="tblCell fwBold">Categories</td>
+                    <td class="tblCell fwBold">Job Queued At</td>
+                    <td class="tblCell fwBold">Job Status</td>
+                    <td class="tblCell fwBold">Progress</td>
+                    <td class="tblCell fwBold"></td>
+                    <td class="tblCell fwBold"></td>
                 </tr>
                 <tr v-for="(search, index) in searchesPending" :key="search.id" :class="{ bgLight: index % 2 == 0 }">
-                    <td class="pr20">${ search.query }</td>
-                    <td class="pr20">${ getCategoriesDisplay(search) }</td>
-                    <td class="pr20">${ search.job ? formatDate(search.job.enqueued_at) : ""}</td>
-                    <td class="pr20">${ search.job ? search.job.status : "stalled"}</td>
-                    <td class="pr20">${ search.finished_categories.length} of ${search.categories.length} categories</td>
-                    <td class="pr20"><a @click.prevent="deleteSearch(search.id)">Delete</a></td>
-                    <td class="pr20"><a @click.prevent="restartSearch(search.id)" v-if="!search.job">Restart</a></td>
+                    <td class="tblCell">${ search.query }</td>
+                    <td class="tblCell">${ getCategoriesDisplay(search) }</td>
+                    <td class="tblCell">${ search.job ? formatDate(search.job.enqueued_at) : ""}</td>
+                    <td class="tblCell">${ getJobStatus(search) }</td>
+                    <td class="tblCell">${ search.finished_categories.length} of ${search.categories.length} categories</td>
+                    <td class="tblCell"><a @click.prevent="deleteSearch(search.id)" v-if="getJobStatus(search) != 'started'">Delete</a></td>
+                    <td class="tblCell"><a @click.prevent="restartSearch(search.id)" v-if="getJobStatus(search) == 'stalled'">Restart</a></td>
                 </tr>
             </table>
             <div v-else>
@@ -157,19 +142,19 @@
 
         <!-- Completed searches -->
         <div class="p10 pb20">
-            <div class="mt10 mb10 fwBold">Completed Searches:</div>
+            <div class="mb10 fwBold">Completed Searches:</div>
             <table v-if="searchesCompleted.length">
                 <tr>
-                    <td class="pr20 fwBold" style="min-width: 500px">Query</td>
-                    <td class="pr20 fwBold">Categories</td>
-                    <td class="pr20 fwBold">Finished At</td>
-                    <td class="pr20 fwBold"></td>
+                    <td class="tblCell fwBold" style="min-width: 500px">Query</td>
+                    <td class="tblCell fwBold">Categories</td>
+                    <td class="tblCell fwBold">Finished At</td>
+                    <td class="tblCell fwBold"></td>
                 </tr>
                 <tr v-for="(search, index) in searchesCompleted" :key="search.id" :class="{ bgLight: index % 2 == 0 }">
-                    <td class="pr20"><a @click.prevent="selectSearch(search)">${ search.query }</a></td>
-                    <td class="pr20">${ getCategoriesDisplay(search) }</td>
-                    <td class="pr20">${ formatDate(search.finished_at) }</td>
-                    <td class="pr20"><a @click.prevent="deleteSearch(search.id)">Delete</a></td>
+                    <td class="tblCell"><a @click.prevent="selectSearch(search)">${ search.query }</a></td>
+                    <td class="tblCell">${ getCategoriesDisplay(search) }</td>
+                    <td class="tblCell">${ formatDate(search.finished_at) }</td>
+                    <td class="tblCell"><a @click.prevent="deleteSearch(search.id)">Delete</a></td>
                 </tr>
             </table>
             <div v-else>

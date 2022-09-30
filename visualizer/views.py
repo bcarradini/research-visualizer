@@ -40,7 +40,6 @@ def abstract(request, scopus_id):
     scopus_id -- a Scopus ID
     """
     abstract = get_abstract(scopus_id)
-    print(f"TEMP: abstract(): abstract = {abstract}")
     return JsonResponse({'abstract': abstract}, status=200)
 
 
@@ -84,9 +83,7 @@ def search_results(request, search_id=None):
     if search_id:
         # Handle DELETE request
         if request.method == 'DELETE':
-            search = Search.objects.get(id=search_id)
-            search.deleted = True
-            search.save()
+            Search.delete_search(search_id)
             response = {
                 'deleted': True,
             }
@@ -220,7 +217,23 @@ def search_result_entries(request, search_id):
 @require_GET
 def subject_area_classifications(request):
     """Get Scopus subject area classifications (and parent categories)."""
-    categories, classifications = get_subject_area_classifications()
+    # Unpack query params
+    cached = request.GET.get('cached') in ['true', 'True', True]
+
+    if cached:
+        # Get categories and classifications stores in local database
+        categories = {
+            c.category_abbr: {'abbr': c.category_abbr, 'name': c.category_name}
+            for c in ScopusClassification.objects.distinct('category_abbr').order_by('category_abbr')
+        }
+        classifications = {
+            c.code: {'code': c.code, 'name': c.name, 'category_abbr': c.category_abbr, 'category_name': c.category_name}
+            for c in ScopusClassification.objects.distinct('code').order_by('code')
+        }
+    else:
+        # Get categories and classifications straight from Scopus in realtime
+        categories, classifications = get_subject_area_classifications()
+
     return JsonResponse({'categories': categories, 'classifications': classifications}, status=200)
 
 
@@ -239,16 +252,29 @@ def _search(query, categories=None):
     """Private handler for public `search()` view. See that function for more details. This is for
     testing convenience, so that async jobs can be queued without an HTTP request being involved.
     """
+    # Initialize search object and queue job for async worker
     search = Search.init_search(query, categories)
     job = queue_job(get_search_results, args=(query, categories, search.id), job_timeout=12*60*60)
+
+    # Record job ID on search object
+    search.job_id = job.id
+    search.save()
+
+    # Return job and search objects
     return (job, search)
 
 def _search_restart(search_id):
     """Private handler for public `search_restart()` view. See that function for more details. This is for
     testing convenience, so that async jobs can be queued without an HTTP request being involved.
     """
+    # Get existing search object and queue job for async worker
     search = _get_search(search_id, finished=False)
     job = queue_job(get_search_results, args=(search.query, None, search.id), job_timeout=12*60*60)
+
+    # Record job ID on search object
+    search.job_id = job.id
+    search.save()
+
     return (job, search)
 
 def _get_search(search_id, finished=True):
@@ -297,12 +323,15 @@ def _serialize_job(job):
     }
 
 def _serialize_search_job(job, search=None):
-    # TODO: Improve hack. Record the job ID on the search object instead of assuming the job's third arg is the search ID
-    search = search or Search.objects.filter(finished=False, deleted=False).filter(id=job.args[2]).first()
+    # If search object was not provided, try to locate unfinished search by job ID
+    search = search or Search.objects.filter(finished=False, deleted=False).filter(job_id=job.id).first()
+
+    # If search object is available, return serialization
     if search:
         search = _serialize_search(search)
         search['job'] = _serialize_job(job)
         return search
+
     return None
 
 def _serialize_search_jobs(jobs):

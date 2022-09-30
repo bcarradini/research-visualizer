@@ -10,6 +10,9 @@ from django.contrib.postgres.fields import jsonb
 from django.core.exceptions import ValidationError
 from django_extensions.db.models import TimeStampedModel
 
+# Internal
+from project.worker import dequeue_job
+
 # Constants
 CATEGORIES = 'categories'
 FINISHED_CATEGORIES = 'finished_categories'
@@ -69,13 +72,18 @@ class ScopusSource(TimeStampedModel):
 class Search(TimeStampedModel):
     BOOLEAN_OPERATORS = ['AND', 'OR'] # supported boolean operators that may be embedded in the search query; case-sensitive
 
-    # Executed search
+    # The search query
     query = models.TextField()
+
+    # The search context
     context = jsonb.JSONField(default=dict) # e.g. {'categories': ['MULT','AGRI','CHEM']}
+
+    # Status of the search
     finished = models.BooleanField(default=False)
     deleted = models.BooleanField(default=False)
 
-    # TODO: comment
+    # Job queued for RQ worker that will perform the search (e.g. '58e50bb9-4b26-4596-af90-791df9ea41c0')
+    job_id = models.CharField(max_length=64, blank=True, null=True)
 
     #
     # -- Superclass methods
@@ -99,6 +107,18 @@ class Search(TimeStampedModel):
     def init_search(cls, query, categories=None):
         # Create instance of class with query and context initialized
         return cls.objects.create(query=query, context=Search._init_context(categories))
+
+    @classmethod
+    def delete_search(cls, search_id):
+        """Mark the search identified by ID as deleted; cancel any related job."""
+        search = Search.objects.filter(id=search_id).first()
+        if search:
+            # Cancel any related job
+            dequeue_job(search.job_id)
+            # Mark as deleted
+            search.deleted = True
+            search.job_id = None
+            search.save()
 
     @classmethod
     def _init_context(cls, categories=None):

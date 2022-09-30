@@ -9,6 +9,7 @@ https://devcenter.heroku.com/articles/python-rq
 from django import db
 from django.conf import settings
 from rq import Connection, Queue, Worker
+from rq.exceptions import NoSuchJobError
 import redis
 
 # Constants
@@ -62,8 +63,20 @@ def queue_job(f, *args, **kwargs):
     job = q.enqueue(f, *args, **kwargs)
 
     print(f"queue_job(): {f}: {job.id}")
-
     return job
+
+
+def dequeue_job(job_id):
+    """Dequeue job for worker."""
+    print(f"queue_job(): job_id = {job_id}")
+    if job_id:
+        # Fetch the job
+        q = Queue(connection=_get_redis_conn())
+        job = q.fetch_job(job_id)
+        if job:
+            # Cancel and delete the job
+            job.cancel()
+            job.delete()
 
 
 def get_pending_jobs():
@@ -71,7 +84,10 @@ def get_pending_jobs():
     q = Queue(connection=_get_redis_conn())
 
     # Get current job from worker (may be None)
-    current_jobs = [worker.get_current_job() for worker in get_workers()]
+    try:
+        current_jobs = [worker.get_current_job() for worker in get_workers()]
+    except NoSuchJobError:
+        current_jobs = []
 
     # Return any jobs in the queue + the current job (if not None)
     return q.jobs + [job for job in current_jobs if job]

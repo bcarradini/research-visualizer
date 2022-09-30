@@ -36,7 +36,6 @@ export async function internalGet(url) {
 export async function internalPost(url, payload) {
   if (apiDebug) console.log('internalPost():', url)
   payload.csrfmiddlewaretoken = Cookies.get('csrftoken')
-  console.log('TEMP: internalPost(): payload.csrfmiddlewaretoken =', payload.csrfmiddlewaretoken)
 
   // Make POST request
   try {
