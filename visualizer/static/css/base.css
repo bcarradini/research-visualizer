@@ -99,6 +99,10 @@ g.v-node {
   background-color: #337ab7; /* hyperlink blue, lol */
   color: #f9f9f9;
 }
+.btnDis {
+  background-color: #d0d0d0;
+  color: #f9f9f9;
+}
 
 /* Table */
 .tblCell {

@@ -49,18 +49,19 @@
         <!-- Fourth-level search results: entries for classification & source -->
         <div v-if="source">
             <!-- TODO: Turn this into a component -->
-            <div v-if="classificationEntries" class="p10 pb20">
+            <div v-if="entries" class="p10 pb20">
                 <table>
                     <tr>
                         <td class="tblCell fwBold">Title</td>
                         <td class="tblCell fwBold">First Author</td>
                     </tr>
-                    <tr v-for="(entry, index) in classificationEntries" :key="entry.scopus_id" :class="{ bgLight: index % 2 == 0 }">
+                    <tr v-for="(entry, index) in entries" :key="entry.scopus_id" :class="{ bgLight: index % 2 == 0 }">
                         <td class="tblCell" style="max-width: 800px"><a @click="enterEntry(entry)">${entry.title}</a></td>
                         <td class="tblCell">${entry.first_author}</td>
                     </tr>
                 </table>
-                <div v-if="moreEntries" @click="fetchMoreSearchEntries" class="btn btnBlue mt20">Load more entries</div>
+                <div v-if="fetchingMore" class="btn btnDis mt20">Loading more...</div>
+                <div v-else-if="moreEntries" @click="fetchMoreSearchEntries" class="btn btnBlue mt20">Load more entries</div>
             </div>
             <!-- Entry modal -->
             <div v-if="entry" class="posFixed fbColCtrCtr bgMask" style="z-index: 20000">

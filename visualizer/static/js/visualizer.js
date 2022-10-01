@@ -29,9 +29,10 @@ const app = createApp({
       chartData: {},
       classification: null,
       entry: null,
-      entries: {},
+      entries: [],
       entriesOffset: 0,
       errors: [],
+      fetchingMore: false,
       minNodeSize: 18,
       nodeSizeMultiplier: 40,
       query: null,
@@ -87,11 +88,8 @@ const app = createApp({
     loadingSearchResults() {
       return this.searchResults == null
     },
-    classificationEntries() {
-      return (this.classification ? this.entries[this.classification] : null) || []
-    },
     moreEntries() {
-      return this.entries[this.classification] ? this.entriesCount > this.entries[this.classification].length : false
+      return this.entries ? this.entriesCount > this.entries.length : false
     },
     networkGraphEventHandlers() {
       // Event handlers for network graph
@@ -168,7 +166,7 @@ const app = createApp({
       this.category = null
       this.classification = null
       this.source = null
-      this.entries = {}
+      this.entries = []
       this.entry = null
       this.errors = []
     },
@@ -352,7 +350,7 @@ const app = createApp({
       this.category = null
       this.classification = null
       this.source = null
-      this.entries = {}
+      this.entries = []
       this.entry = null
       this.errors = []
       this.setupSpokeNodes()
@@ -369,7 +367,7 @@ const app = createApp({
       // Clear classification on instance; setup spoke nodes to view inter-classification results
       this.classification = null
       this.source = null
-      this.entries = {}
+      this.entries = []
       this.entry = null
       this.errors = []
       this.setupSpokeNodes(this.category)
@@ -382,7 +380,7 @@ const app = createApp({
 
     exitSource(source) {
       this.source = null
-      this.entries = {}
+      this.entries = []
       this.entry = null
       this.errors = []
       this.setupChartData(this.classification)
@@ -481,20 +479,23 @@ const app = createApp({
       let response = await internalGet(url)
       if (response) {
         // TODO: comment
-        if (reset || !this.entries[classification]) {
-          this.entries = {...this.entries, [classification]: response.results}
+        if (reset) {
+          this.entries = response.results
+          this.entriesOffset = LIMIT
         } else {
-          this.entries = {...this.entries, [classification]: [...this.entries[classification], ...response.results]}
+          this.entries = [...this.entries, ...response.results]
+          this.entriesOffset += LIMIT
         }
         this.entriesCount = response.count
-        this.entriesOffset += LIMIT
       } else {
         this.errors.push(`Failed to retrieve entries`)
       }
     },
 
     async fetchMoreSearchEntries() {
-      this.fetchSearchEntries(this.search.id, this.category, this.classification, this.source, false)
+      this.fetchingMore = true
+      await this.fetchSearchEntries(this.search.id, this.category, this.classification, this.source, false)
+      this.fetchingMore = false
     },
 
     async fetchAbstract(scopusId) {
