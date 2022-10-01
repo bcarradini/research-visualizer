@@ -55,12 +55,12 @@
                         <td class="tblCell fwBold">Title</td>
                         <td class="tblCell fwBold">First Author</td>
                     </tr>
-                    <tr v-for="(entry, index) in classificationEntries" :key="entry.scopus_id" :class="{ bgLight: index % 2 == 0 }" @click="enterEntry(entry)">
-                        <td class="tblCell" style="max-width: 800px">${entry.title}</td>
+                    <tr v-for="(entry, index) in classificationEntries" :key="entry.scopus_id" :class="{ bgLight: index % 2 == 0 }">
+                        <td class="tblCell" style="max-width: 800px"><a @click="enterEntry(entry)">${entry.title}</a></td>
                         <td class="tblCell">${entry.first_author}</td>
                     </tr>
                 </table>
-                <div v-if="moreEntries" @click="fetchMoreSearchEntries">Load more entries</div>
+                <div v-if="moreEntries" @click="fetchMoreSearchEntries" class="btn btnBlue mt20">Load more entries</div>
             </div>
             <!-- Entry modal -->
             <div v-if="entry" class="posFixed fbColCtrCtr bgMask" style="z-index: 20000">
@@ -109,7 +109,7 @@
         <div class="p10 pb20">
             <div class="mb10 fwBold">New Search:</div>
             <input v-model=query type="text" style="min-width:300px; max-width:600px;"></input>
-            <a @click.prevent="initiateSearch" class="btn btnDrk ml10">Search</a>
+            <a @click.prevent="initiateSearch" class="btn btnBlue ml10">Search</a>
         </div>
 
         <!-- Pending searches -->

@@ -57,16 +57,12 @@ const app = createApp({
     this.fetchSearchResults()
     this.fetchSearchResults({pending: true})
     this.fetchSubjectAreaClassifications()
-    // // TEMP
+    // TEMP
     // this.search = {
     //   id: 43,
     //   query: 'social media',
-    //   categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
-    //   finished: true,
-    //   finished_at: '2022-02-26T04:32:04.909Z',
-    //   finished_categories: ['SOCI', 'AGRI', 'ARTS', 'BIOC', 'BUSI', 'CENG', 'CHEM', 'COMP', 'DECI', 'DENT', 'EART', 'ECON', 'ENER', 'ENGI', 'ENVI', 'HEAL', 'IMMU', 'MATE', 'MATH', 'MEDI', 'MULT', 'NEUR', 'NURS', 'PHAR', 'PHYS', 'PSYC', 'VETE'],
     // }
-    // // TEMP
+    // TEMP
   },
 
   mounted: function() {
@@ -126,10 +122,10 @@ const app = createApp({
   watch: {
     search(newSearch, oldSearch) {
       if (newSearch) {
-        if (newSearch.id && newSearch.id != (oldSearch && oldSearch.id)) {
+        if (newSearch.id) {
           console.log('search(): fetch old search results', newSearch.id)
           this.fetchSearchResults({searchId: newSearch.id})
-        } else {
+        } else if (newSearch.query) {
           console.log('search(): fetch new search results', newSearch.query)
           this.startSearch(newSearch.query) // for now, implicitly search all categories
         }
@@ -171,6 +167,7 @@ const app = createApp({
       this.searchResults = null
       this.category = null
       this.classification = null
+      this.source = null
       this.entries = {}
       this.entry = null
       this.errors = []
@@ -425,11 +422,11 @@ const app = createApp({
         if (searchId) {
           this.searchResults = response.results
           this.setupSpokeNodes()
-          // // TEMP
-          // this.enterCategory('COMP') // 'SOCI'
-          // this.enterClassification(1710) // 3315
-          // this.enterSource(19700177337) // 16306
-          // // TEMP
+          // TEMP
+          // this.enterCategory("MEDI") //MEDI
+          // this.enterClassification("2739") //2739
+          // this.enterSource(144989)
+          // TEMP
         } else if (pending) {
           this.searchesPending = response.results
         } else {

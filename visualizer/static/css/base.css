@@ -72,6 +72,9 @@ g.v-node {
 .pb20 {
   padding-bottom: 20px;
 }
+.mt20 {
+  margin-top: 20px;  
+}
 .mb10 {
   margin-bottom: 10px;
 }
@@ -92,18 +95,9 @@ g.v-node {
   vertical-align: bottom !important;
   padding: 2px 12px !important;
 }
-.btnMin {
-  vertical-align: bottom !important;
-  padding: 0px 12px !important;
-  margin-top: 2px !important;
-}
-.btnMid {
-  background-color: #d0d0d0;
-  color: #333333;
-}
-.btnDrk {
-  background-color: #333333;
-  color: white;
+.btnBlue {
+  background-color: #337ab7; /* hyperlink blue, lol */
+  color: #f9f9f9;
 }
 
 /* Table */
