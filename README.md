@@ -4,9 +4,8 @@ Visualize research topics across [Scopus subject area classifications](https://s
 
 
 ## Prerequisites
-- You have a GitHub account a
-- You have a Scopus API Key and Insttoken **TODO: write instructions**
-
+- You have a GitHub account
+- You have access to Scopus through an institution, which allows you a Scopus API Key (which you can acquire [here](https://dev.elsevier.com/)) and an  [Insttoken](https://dev.elsevier.com/support.html); you will need to [contact Elsevier Support via email for an Insttoken](https://service.elsevier.com/app/contact/supporthub/dataasaservice/).
 
 ## Installation
 These installation instructions were written for macOS but should be roughly applicable on other Unix-based operating systems.
