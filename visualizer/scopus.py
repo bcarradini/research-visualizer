@@ -79,7 +79,7 @@ def get_abstract(scopus_id):
         else:
             abstract = description['abstract']['ce:para']
     except Exception as exc:
-        print(f"get_abstract(): ERROR: {exc}, {url}, {response.json()}")
+        print(f"get_abstract(): ERROR: {exc}, {url}, {response.content}")
         raise exc
 
     return abstract
@@ -271,7 +271,7 @@ def _search_category_entries(search, category):
         try:
             response.raise_for_status()
         except Exception as exc:
-            print(f"_search_category_entries(): ERROR: {exc}, {url}, {response.headers}, {response.json()}")
+            print(f"_search_category_entries(): ERROR: {exc}, {url}, {response.headers}, {response.content}")
 
             # If we've exceeded our quota (429 TOO MANY REQUESTS), log reset timestamp before raising exception
             if response.status_code == 429:
