@@ -1,5 +1,5 @@
 
-# research-visualizer
+# Fernweh Interdisciplinary Research Visualizer
 Visualize research topics across [Scopus subject area classifications](https://service.elsevier.com/app/answers/detail/a_id/14882/supporthub/scopus/~/what-are-the-most-frequent-subject-area-categories-and-classifications-used-in/).
 
 
