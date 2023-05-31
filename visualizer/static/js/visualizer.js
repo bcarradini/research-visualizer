@@ -252,7 +252,11 @@ const app = createApp({
       let maxCount = Math.max(...Object.entries(results).map(([key, obj]) => {
         // When viewing results for a specific category, select `count` from each object (i.e. classification);
         // when viewing for all categories, select `total.count` for each object (i.e. category)
-        return category ? obj.count : obj.total.count
+        if (category) {
+          return key != 'total' ? obj.count : 0 // ignore the "total" key, which represents the category as a whole
+        } else {
+          return obj.total.count
+        }
       }))
  
       // Assemble spoke nodes to visually represent search results
